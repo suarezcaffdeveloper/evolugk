@@ -1,0 +1,7 @@
+node_modules
+.next
+pnpm-lock.yaml
+landing
+docs
+specs
+DESIGN-BRIEF.md
