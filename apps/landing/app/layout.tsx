@@ -1,14 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Jost } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import "./cine.css";
 import "./cine2.css";
 import { Observer } from "@/components/Observer";
 import { Chrome } from "@/components/Chrome";
 
-const jost = Jost({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
+// Jost (SIL OFL 1.1) alojada en el repo: el build no depende de Google Fonts
+// ni del reemplazo interno de next/font/google, que falla con el build de Vercel.
+const jost = localFont({
+  src: "./fonts/jost-latin-wght-normal.woff2",
+  weight: "100 900",
   variable: "--font-jost",
   display: "swap",
 });
