@@ -7,7 +7,9 @@
   },
   "scripts": {
     "dev": "pnpm --filter web dev",
+    "dev:landing": "pnpm --filter evolugk-landing dev",
     "build": "pnpm --filter web build",
+    "build:landing": "pnpm --filter evolugk-landing build",
     "lint": "pnpm --filter web lint",
     "typecheck": "pnpm --filter web typecheck",
     "test": "pnpm --filter web test",

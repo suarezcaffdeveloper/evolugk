@@ -16,3 +16,4 @@ Thumbs.db
 *.log
 .vercel/
 .taste-skill/
+*.tsbuildinfo
