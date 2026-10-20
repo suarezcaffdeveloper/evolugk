@@ -17,3 +17,7 @@ Thumbs.db
 .vercel/
 .taste-skill/
 *.tsbuildinfo
+
+# Credenciales locales del CLI de Supabase
+supabase/.secrets.local
+supabase/.secrets.*.local

@@ -13,9 +13,11 @@
     "lint": "pnpm --filter web lint",
     "typecheck": "pnpm --filter web typecheck",
     "test": "pnpm --filter web test",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "db": "node scripts/supabase-cli.mjs"
   },
   "devDependencies": {
-    "prettier": "^3.9.10"
+    "prettier": "^3.9.10",
+    "supabase": "^2.121.0"
   }
 }
