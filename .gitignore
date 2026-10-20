@@ -1,0 +1,18 @@
+# Dependencias y builds
+node_modules/
+.next/
+out/
+dist/
+coverage/
+
+# Variables de entorno (se versiona solo .env.example)
+.env
+.env.*
+!.env.example
+
+# Sistema y herramientas
+.DS_Store
+Thumbs.db
+*.log
+.vercel/
+.taste-skill/
