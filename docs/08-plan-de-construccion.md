@@ -34,7 +34,7 @@ No fueron decididas en las specs; las propongo para que las confirmes o cambies.
 ## 3. Antes de empezar (hito 0)
 Tareas previas, algunas tuyas:
 
-1. **Brief de diseño:** sesión de preguntas de dirección visual (estilo, tono, referencias). Produce `docs/DESIGN-BRIEF.md`.
+1. **Brief de diseño:** sesión de preguntas de dirección visual (estilo, tono, referencias). Produce `DESIGN-BRIEF.md` en la raíz del repositorio (hecho).
 2. **Cuentas** (cuando haga falta, en este orden): GitHub, Supabase (dos proyectos), Vercel. Más adelante Mux, Resend y el dominio.
 3. **Repositorio:** inicializar git y dejar `docs/` y `specs/` como primer commit.
 4. **Proyecto base:** Next.js con TypeScript, lint, formateo, estructura de carpetas y variables de entorno.
