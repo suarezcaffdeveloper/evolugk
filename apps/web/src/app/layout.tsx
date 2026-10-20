@@ -1,16 +1,20 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const figtree = Figtree({
+// Fuentes alojadas en el repo (SIL OFL 1.1): el build no depende de Google Fonts
+// ni del reemplazo interno de next/font/google, que falla con el build de Vercel.
+const figtree = localFont({
+  src: "./fonts/figtree-latin-wght-normal.woff2",
+  weight: "300 900",
   variable: "--font-figtree",
-  subsets: ["latin", "latin-ext"],
   display: "swap",
 });
 
-const bricolage = Bricolage_Grotesque({
+const bricolage = localFont({
+  src: "./fonts/bricolage-grotesque-latin-wght-normal.woff2",
+  weight: "200 800",
   variable: "--font-bricolage",
-  subsets: ["latin", "latin-ext"],
   display: "swap",
 });
 
