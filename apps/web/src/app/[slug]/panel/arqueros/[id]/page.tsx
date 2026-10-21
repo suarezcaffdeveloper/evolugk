@@ -428,6 +428,23 @@ async function GoalkeeperContent({
         )}
       </Card>
 
+      {isAdmin && (
+        <Link
+          href={`${base}/${id}/cuotas`}
+          className="rise-in block rounded-card focus-visible:outline-offset-4"
+          style={{ "--i": 2 } as CSSProperties}
+        >
+          <Card interactive className="space-y-1">
+            <h2 className="font-display text-lg font-bold">Cuotas</h2>
+            <p className="text-ink-muted">
+              {detail.feeExempt
+                ? "Exento de cuota."
+                : "Estado de las cuotas, pagos, adelantos y exención."}
+            </p>
+          </Card>
+        </Link>
+      )}
+
       <Card className="rise-in space-y-4" style={{ "--i": 2 } as CSSProperties}>
         <h2 className="font-display text-lg font-bold">Medidas</h2>
         <MeasurementForm slug={session.school.slug} goalkeeperId={id} today={today} />

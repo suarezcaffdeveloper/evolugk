@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { fieldErrorsFrom, type FieldErrors } from "@/lib/auth-schemas";
-import { argentinaDatePlusDays } from "@/lib/dates";
+import { argentinaDate, argentinaDatePlusDays } from "@/lib/dates";
+import { addMonths } from "@/lib/fees";
 import { isValidSlug } from "@/lib/slug";
 import { createInvitation, emailSchema, type InvitableRole } from "./invitations";
 
@@ -14,7 +15,7 @@ const numberField = (label: string) =>
     .transform((value) => Number(value.replace(",", ".")))
     .pipe(z.number({ error: "Ingresá un número válido." }).finite("Ingresá un número válido."));
 
-export const createSchoolSchema = z.object({
+const baseShape = {
   name: z
     .string({ error: "Ingresá el nombre de la escuela." })
     .trim()
@@ -44,12 +45,31 @@ export const createSchoolSchema = z.object({
       .int("Tiene que ser un número entero.")
       .min(0, "El tope de video no puede ser negativo."),
   ),
+};
+
+export const createSchoolSchema = z.object({
+  ...baseShape,
   trialDays: numberField("los días de prueba").pipe(
     z
       .number()
       .int("Tiene que ser un número entero.")
       .min(1, "La prueba debe durar al menos 1 día.")
       .max(365, "La prueba no puede superar los 365 días."),
+  ),
+});
+
+/** Alta sin prueba y con primer pago (spec 07, RF-05): el monto y los meses cubiertos reemplazan a la prueba. */
+export const createSchoolPaidSchema = z.object({
+  ...baseShape,
+  paymentAmountArs: numberField("el monto del primer pago").pipe(
+    z.number().positive("El monto tiene que ser mayor que cero."),
+  ),
+  paymentMonths: numberField("los meses cubiertos").pipe(
+    z
+      .number()
+      .int("Tiene que ser un número entero.")
+      .min(1, "Tiene que cubrir al menos 1 mes.")
+      .max(60, "No puede superar los 60 meses."),
   ),
 });
 
@@ -73,11 +93,15 @@ export async function createSchoolWithAdminInvitation(
   raw: Record<string, unknown>,
   context: { actorId: string; now?: Date },
 ): Promise<CreateSchoolResult> {
-  const parsed = createSchoolSchema.safeParse(raw);
+  const paidStart = raw.startMode === "paid";
+  const parsed = paidStart
+    ? createSchoolPaidSchema.safeParse(raw)
+    : createSchoolSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: "invalid_input", fieldErrors: fieldErrorsFrom(parsed.error) };
   }
-  const input = parsed.data;
+  const input = parsed.data as z.infer<typeof createSchoolSchema> &
+    Partial<z.infer<typeof createSchoolPaidSchema>>;
   const now = context.now ?? new Date();
 
   const school = await admin
@@ -91,18 +115,38 @@ export async function createSchoolWithAdminInvitation(
   const schoolId = school.data.id as string;
   const rollback = () => admin.from("school").delete().eq("id", schoolId);
 
-  const trialUntil = argentinaDatePlusDays(now, input.trialDays);
+  const today = argentinaDate(now);
+  const trialUntil = paidStart ? null : argentinaDatePlusDays(now, input.trialDays);
+  const coveredUntil = paidStart
+    ? addMonths(today, input.paymentMonths as number)
+    : (trialUntil as string);
   const subscription = await admin.from("subscription").insert({
     school_id: schoolId,
     monthly_price_ars: input.monthlyPriceArs,
     goalkeeper_limit: input.goalkeeperLimit,
     video_minutes_limit: input.videoMinutesLimit,
     trial_until: trialUntil,
-    covered_until: trialUntil,
+    covered_until: coveredUntil,
   });
   if (subscription.error) {
     await rollback();
     return { ok: false, error: "failed" };
+  }
+
+  if (paidStart) {
+    const payment = await admin.from("subscription_payment").insert({
+      school_id: schoolId,
+      paid_on: today,
+      amount_ars: input.paymentAmountArs,
+      months_covered: input.paymentMonths,
+      recorded_by: context.actorId,
+      covered_before: today,
+      covered_after: coveredUntil,
+    });
+    if (payment.error) {
+      await rollback();
+      return { ok: false, error: "failed" };
+    }
   }
 
   const invitation = await createInvitation(admin, {
@@ -126,7 +170,9 @@ export async function createSchoolWithAdminInvitation(
     action: "school.created",
     entity: "school",
     entity_id: schoolId,
-    details: { slug: input.slug, trial_days: input.trialDays },
+    details: paidStart
+      ? { slug: input.slug, first_payment_months: input.paymentMonths }
+      : { slug: input.slug, trial_days: input.trialDays },
   });
 
   return {
@@ -178,8 +224,8 @@ export const MAX_VIDEO_MINUTES_LIMIT = 100_000;
 
 /**
  * El operador cambia el tope de minutos de video de una escuela (spec 07, RF-04). Se aplica de
- * inmediato: si la escuela estaba bloqueada al 100%, las subidas se destraban. El historial de
- * condiciones completo llega con el hito de suscripciones; por ahora queda en la auditoría.
+ * inmediato: si la escuela estaba bloqueada al 100%, las subidas se destraban. El cambio queda en el
+ * historial de condiciones (RF-03) y en la auditoría.
  */
 export async function setVideoMinutesLimit(
   admin: SupabaseClient,
@@ -205,6 +251,13 @@ export async function setVideoMinutesLimit(
     .eq("school_id", input.schoolId);
   if (error) return { ok: false, error: "failed" };
 
+  await admin.from("subscription_change").insert({
+    school_id: input.schoolId,
+    field: "video_minutes_limit",
+    old_value: String(current.video_minutes_limit),
+    new_value: String(input.minutes),
+    made_by: input.actorId,
+  });
   await admin.from("audit_log").insert({
     school_id: input.schoolId,
     actor_id: input.actorId,

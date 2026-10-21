@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { argentinaDate } from "@/lib/dates";
 import { generateAccessCode } from "@/lib/access-code";
 import {
   ADULT_AGE,
@@ -11,6 +12,7 @@ import {
   type MeasurementInput,
   type Relationship,
 } from "@/lib/goalkeeper-schemas";
+import { applyStatusChangeToFees, startFeeCycle } from "./fees";
 import { issueInitialPin, revokeGuardianAccess, unlockGuardian } from "./guardian/access";
 import { deleteGoalkeeperVideos } from "./videos";
 import type { VideoProvider } from "./video/provider";
@@ -367,6 +369,15 @@ export async function createGoalkeeper(
     return { ok: false, error: "failed" };
   }
 
+  // Spec 06, RF-01 y RF-06: el inicio de cuotas es la fecha de ingreso y se asume pagada la primera.
+  await startFeeCycle(db, {
+    schoolId,
+    goalkeeperId: created.id,
+    start: g.joinedOn,
+    today: input.today,
+    actorId: input.actorId,
+  }).catch(() => undefined);
+
   await audit(db, input, "goalkeeper.created", "goalkeeper", created.id);
   return { ok: true, goalkeeperId: created.id, credentials };
 }
@@ -412,8 +423,14 @@ export async function updateGoalkeeper(
 /** Cambia el estado (RF-22 y RF-23). El historial se conserva en todos los estados. */
 export async function setGoalkeeperStatus(
   db: Db,
-  input: Actor & { goalkeeperId: string; status: GoalkeeperStatus },
+  input: Actor & { goalkeeperId: string; status: GoalkeeperStatus; today?: string },
 ): Promise<UpdateResult> {
+  const { data: before } = await db
+    .from("goalkeeper")
+    .select("status")
+    .eq("id", input.goalkeeperId)
+    .eq("school_id", input.schoolId)
+    .maybeSingle();
   const { data, error } = await db
     .from("goalkeeper")
     .update({ status: input.status })
@@ -422,6 +439,14 @@ export async function setGoalkeeperStatus(
     .select("id");
   if (error) return { ok: false, error: "failed" };
   if (!data?.length) return { ok: false, error: "not_found" };
+  // Spec 06, RF-21 y RF-22: la baja anula las cuotas futuras; la reactivación reinicia el ciclo.
+  if (before) {
+    await applyStatusChangeToFees(db, {
+      ...input,
+      today: input.today ?? argentinaDate(new Date()),
+      previousStatus: before.status as GoalkeeperStatus,
+    }).catch(() => undefined);
+  }
   await audit(db, input, "goalkeeper.status_changed", "goalkeeper", input.goalkeeperId, {
     status: input.status,
   });
@@ -848,6 +873,8 @@ export type GoalkeeperDetail = {
   category: string | null;
   goal: string | null;
   status: GoalkeeperStatus;
+  /** Marca de cuotas: solo se muestra a la administración (spec 06, RF-36). */
+  feeExempt: boolean;
   emergency: { name: string | null; phone: string | null; relationship: string | null };
   consent: ConsentStatus;
   consentHistory: { grantedAt: string; revokedAt: string | null; guardianId: string }[];
@@ -924,6 +951,7 @@ export async function getGoalkeeperDetail(
     category: g.category,
     goal: g.goal,
     status: g.status,
+    feeExempt: g.fee_exempt === true,
     emergency: {
       name: g.emergency_name,
       phone: g.emergency_phone,

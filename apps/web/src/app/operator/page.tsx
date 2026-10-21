@@ -6,6 +6,8 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { formatCalendarDate } from "@/lib/dates";
 import { requireOperator } from "@/server/auth/guards";
 import { listSchools, type SchoolSummary } from "@/server/schools";
+import { ALERT_LABELS, listOpenAlerts } from "@/server/subscriptions";
+import { DismissAlertButton } from "./escuelas/[slug]/subscription-forms";
 import { createServiceClient } from "@/server/supabase";
 import { operatorLogoutAction } from "./actions";
 
@@ -24,7 +26,8 @@ export default function OperatorHomePage() {
 async function OperatorHome() {
   // Al panel solo se entra con la verificación en dos pasos completa.
   const session = await requireOperator("ready");
-  const schools = await listSchools(createServiceClient());
+  const db = createServiceClient();
+  const [schools, alerts] = await Promise.all([listSchools(db), listOpenAlerts(db)]);
 
   return (
     <>
@@ -36,12 +39,37 @@ async function OperatorHome() {
           </h1>
         </div>
         <Link
+          href="/operator/ingresos"
+          className="inline-flex h-11 items-center justify-center rounded-control border border-line bg-surface px-4 font-semibold transition-colors duration-150 hover:bg-accent-soft"
+        >
+          Ingresos
+        </Link>
+        <Link
           href="/operator/escuelas/nueva"
           className="inline-flex h-11 items-center justify-center rounded-control bg-accent px-4 font-semibold text-on-accent shadow-card transition-[box-shadow,transform,filter] duration-150 hover:shadow-card-hover hover:brightness-110 active:scale-[0.97]"
         >
           Nueva escuela
         </Link>
       </div>
+
+      {alerts.length > 0 && (
+        <Card className="rise-in space-y-3 border-warning/50 bg-warning/10">
+          <h2 className="font-display text-lg font-bold">
+            Alertas <span className="tabular text-ink-muted">({alerts.length})</span>
+          </h2>
+          <ul className="divide-y divide-line">
+            {alerts.map((alert) => (
+              <li key={alert.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <Link href={`/operator/escuelas/${alert.schoolSlug}`} className="hover:text-accent">
+                  <span className="block font-semibold">{alert.schoolName}</span>
+                  <span className="block text-sm text-ink-muted">{ALERT_LABELS[alert.type]}</span>
+                </Link>
+                <DismissAlertButton alertId={alert.id} />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <section aria-labelledby="schools-title" className="space-y-3">
         <h2 id="schools-title" className="font-display text-xl font-bold">

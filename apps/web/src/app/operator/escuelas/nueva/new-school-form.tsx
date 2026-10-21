@@ -25,6 +25,7 @@ export function NewSchoolForm() {
   const [state, formAction] = useActionState<NewSchoolState, FormData>(createSchoolAction, {});
   const slugTouched = useRef(false);
   const [slug, setSlug] = useState("");
+  const [startMode, setStartMode] = useState<"trial" | "paid">("trial");
   // Una nueva escuela vuelve a mostrar el formulario vacío.
   const [formKey, setFormKey] = useState(0);
 
@@ -176,21 +177,73 @@ export function NewSchoolForm() {
             />
           </Field>
         </div>
-        <Field
-          label="Días de prueba"
-          htmlFor="trialDays"
-          error={errors.trialDays}
-          hint="La prueba no se cierra sola: la cerrás vos desde el panel."
-        >
-          <Input
-            id="trialDays"
-            name="trialDays"
-            inputMode="numeric"
-            required
-            defaultValue={values.trialDays ?? "30"}
-            {...describedBy("trialDays", { error: errors.trialDays, hint: "x" })}
-          />
-        </Field>
+        <fieldset className="space-y-3">
+          <legend className="text-sm font-semibold">Cómo empieza</legend>
+          <label className="flex min-h-11 items-center gap-3">
+            <input
+              type="radio"
+              name="startMode"
+              value="trial"
+              checked={startMode === "trial"}
+              onChange={() => setStartMode("trial")}
+            />
+            Con período de prueba
+          </label>
+          <label className="flex min-h-11 items-center gap-3">
+            <input
+              type="radio"
+              name="startMode"
+              value="paid"
+              checked={startMode === "paid"}
+              onChange={() => setStartMode("paid")}
+            />
+            Sin prueba, con primer pago
+          </label>
+        </fieldset>
+        {startMode === "trial" ? (
+          <Field
+            label="Días de prueba"
+            htmlFor="trialDays"
+            error={errors.trialDays}
+            hint="La prueba no se cierra sola: la cerrás vos desde el panel."
+          >
+            <Input
+              id="trialDays"
+              name="trialDays"
+              inputMode="numeric"
+              required
+              defaultValue={values.trialDays ?? "30"}
+              {...describedBy("trialDays", { error: errors.trialDays, hint: "x" })}
+            />
+          </Field>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Monto del primer pago (ARS)"
+              htmlFor="paymentAmountArs"
+              error={errors.paymentAmountArs}
+            >
+              <Input
+                id="paymentAmountArs"
+                name="paymentAmountArs"
+                inputMode="decimal"
+                required
+                defaultValue={values.paymentAmountArs}
+                {...describedBy("paymentAmountArs", { error: errors.paymentAmountArs })}
+              />
+            </Field>
+            <Field label="Meses cubiertos" htmlFor="paymentMonths" error={errors.paymentMonths}>
+              <Input
+                id="paymentMonths"
+                name="paymentMonths"
+                inputMode="numeric"
+                required
+                defaultValue={values.paymentMonths ?? "1"}
+                {...describedBy("paymentMonths", { error: errors.paymentMonths })}
+              />
+            </Field>
+          </div>
+        )}
       </Card>
 
       <SubmitButton size="lg" className="w-full" pendingText="Creando la escuela…">

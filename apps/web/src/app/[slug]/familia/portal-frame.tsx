@@ -22,12 +22,16 @@ export function PortalFrame({
   children: ReactNode;
 }) {
   const base = `/${slug}/familia`;
+  // La sección de cuota no existe para un arquero exento, inactivo o egresado (spec 06, RF-40).
+  const current = goalkeepers.find((g) => g.id === currentId);
+  const showFees = current?.status === "active" && !current.feeExempt;
   const items = currentId
     ? [
         { href: `${base}/${currentId}`, label: "Inicio" },
         { href: `${base}/${currentId}/evolucion`, label: "Evolución" },
         { href: `${base}/${currentId}/videos`, label: "Videos" },
         { href: `${base}/${currentId}/asistencia`, label: "Asistencia" },
+        ...(showFees ? [{ href: `${base}/${currentId}/cuotas`, label: "Cuota" }] : []),
         { href: `${base}/${currentId}/privacidad`, label: "Privacidad" },
         { href: `${base}/mis-datos`, label: "Mis datos" },
       ]

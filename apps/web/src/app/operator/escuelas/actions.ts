@@ -41,6 +41,9 @@ const FIELDS = [
   "goalkeeperLimit",
   "videoMinutesLimit",
   "trialDays",
+  "startMode",
+  "paymentAmountArs",
+  "paymentMonths",
 ] as const;
 
 export async function createSchoolAction(

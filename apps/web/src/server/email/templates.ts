@@ -241,3 +241,104 @@ export function videosPublishedEmail(input: {
     ].join("\n"),
   };
 }
+
+type FeeNoticeType = "fee_5_days_before" | "fee_due_day" | "fee_grace_ends" | "fee_3_days_after";
+
+function calendarDate(date: string): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return formatLongDate(new Date(Date.UTC(y, m - 1, d, 12)));
+}
+
+/** Aviso de cuota a la familia (spec 06, RF-29): sin montos, con la fecha y el contacto de la escuela. */
+export function feeNoticeEmail(input: {
+  to: string;
+  type: FeeNoticeType;
+  schoolName: string;
+  goalkeeperName: string;
+  dueOn: string;
+  graceUntil: string;
+  contact: { phone: string | null; whatsapp: string | null; email: string | null };
+  link: string;
+  accentColor?: string | null;
+}): EmailMessage {
+  const due = calendarDate(input.dueOn);
+  const grace = calendarDate(input.graceUntil);
+  const copy: Record<FeeNoticeType, { subject: string; heading: string; line: string }> = {
+    fee_5_days_before: {
+      subject: `Se acerca la cuota de ${input.goalkeeperName}`,
+      heading: "Se acerca la fecha de pago de la cuota",
+      line: `La cuota de ${input.goalkeeperName} corresponde pagarla el ${due}.`,
+    },
+    fee_due_day: {
+      subject: `Hoy corresponde pagar la cuota de ${input.goalkeeperName}`,
+      heading: "Hoy es la fecha de pago de la cuota",
+      line: `Hoy, ${due}, corresponde pagar la cuota de ${input.goalkeeperName}. Tenés tiempo hasta el ${grace}.`,
+    },
+    fee_grace_ends: {
+      subject: `Hoy vence el plazo de la cuota de ${input.goalkeeperName}`,
+      heading: "Hoy vence el plazo de la cuota",
+      line: `Hoy, ${grace}, vence el plazo para pagar la cuota de ${input.goalkeeperName}.`,
+    },
+    fee_3_days_after: {
+      subject: `La cuota de ${input.goalkeeperName} está vencida`,
+      heading: "La cuota está vencida",
+      line: `El plazo para pagar la cuota de ${input.goalkeeperName} venció el ${grace}.`,
+    },
+  };
+  const c = copy[input.type];
+  const contactLines = [
+    input.contact.phone && `Teléfono: ${input.contact.phone}`,
+    input.contact.whatsapp && `WhatsApp: ${input.contact.whatsapp}`,
+    input.contact.email && `Mail: ${input.contact.email}`,
+  ].filter((l): l is string => !!l);
+  const contact =
+    contactLines.length > 0
+      ? `Para coordinar el pago, comunicate con la escuela. ${contactLines.join(" · ")}`
+      : "Para coordinar el pago, comunicate con la escuela.";
+
+  return {
+    to: input.to,
+    subject: `${c.subject} · ${input.schoolName}`,
+    html: renderLayout({
+      schoolName: input.schoolName,
+      accentColor: input.accentColor,
+      heading: c.heading,
+      paragraphs: [escapeHtml(c.line), escapeHtml(contact)],
+      buttonLabel: "Ver el estado de la cuota",
+      link: input.link,
+      footnote:
+        "Si ya pagaste, avisale a la escuela: puede demorar en registrarlo. Recibís este mail porque sos tutor o tutora de este arquero.",
+    }),
+    text: [
+      c.line,
+      "",
+      contact,
+      "",
+      `Estado de la cuota en el portal: ${input.link}`,
+      "",
+      "Si ya pagaste, avisale a la escuela: puede demorar en registrarlo.",
+    ].join("\n"),
+  };
+}
+
+/** Resumen diario de alertas para el operador (spec 07, RF-30). Solo se manda si hay novedades. */
+export function operatorSummaryEmail(input: {
+  to: string;
+  items: { schoolName: string; label: string }[];
+  link: string;
+}): EmailMessage {
+  const lines = input.items.map((i) => `${i.schoolName}: ${i.label}`);
+  return {
+    to: input.to,
+    subject: `EvoluGK: ${input.items.length} ${input.items.length === 1 ? "novedad" : "novedades"} en las escuelas`,
+    html: renderLayout({
+      schoolName: "EvoluGK",
+      heading: "Novedades de las escuelas",
+      paragraphs: lines.map((l) => escapeHtml(l)),
+      buttonLabel: "Abrir el panel del operador",
+      link: input.link,
+      footnote: "Recibís este resumen solo los días con novedades.",
+    }),
+    text: [...lines, "", `Panel: ${input.link}`].join("\n"),
+  };
+}
