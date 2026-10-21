@@ -29,6 +29,13 @@ Pantallas (con marca de la escuela):
 4. **Videos:** lista por fecha y tema, reproductor con comentarios.
 5. **Asistencia y cuota:** porcentaje de asistencia, estado de cuota (al día / vence / vencida).
 
+## Fase 2
+- **Profesor, comentar un video:** botón de micrófono en el cuadro de comentario; el texto dictado aparece para revisarlo antes de guardar. Botón de lápiz para pausar y dibujar sobre el cuadro (colores, grosor, goma, deshacer).
+- **Profesor, comparar:** desde la ficha del arquero, "Comparar" → elegir dos clips (con filtro por tema) → verlos lado a lado con control común → guardar y publicar.
+- **Familia:** las anotaciones se ven al llegar al segundo marcado, y las comparaciones publicadas aparecen como novedad dentro de Videos.
+- **Admin, Redes:** lista de piezas sugeridas para Instagram con vista previa, texto editable, aprobar/descartar y descargar; configuración de tipos de pieza. Consentimiento de redes visible en la ficha del arquero.
+- Detalle en [spec 03](../specs/03-videos.md) (sección 12) y [spec 08](../specs/08-contenido-redes.md).
+
 ## Plataforma (operador)
 - Alta de escuela con condiciones a medida (precio, topes, prueba), registro de pagos, estado de cuenta, suspensión y reactivación, panel de alertas, resumen de ingresos y uso de video.
 

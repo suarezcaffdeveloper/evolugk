@@ -21,6 +21,10 @@
 | Tomar asistencia | | ✔ | ✔ | |
 | Cargar evaluaciones y notas | | ✔ | ✔ (cualquier arquero) | |
 | Subir videos y comentarios | | ✔ | ✔ (cualquier arquero) | |
+| Dictar comentarios, dibujar sobre videos y crear comparaciones *(Fase 2)* | | ✔ | ✔ (cualquier arquero) | |
+| Ver anotaciones y comparaciones publicadas *(Fase 2)* | | ✔ | ✔ | ✔ (sus arqueros) |
+| Ver, aprobar y descargar piezas para redes *(Fase 2)* | | ✔ | | |
+| Dar o retirar el consentimiento de redes *(Fase 2)* | | | | ✔ |
 | Registrar pagos de cuotas, ver resumen de cobranza | | ✔ | | |
 | Ver ficha, evolución y videos | | ✔ | ✔ (todos) | ✔ (sus arqueros) |
 | Ver asistencia y estado de cuota propios | | ✔ | | ✔ |

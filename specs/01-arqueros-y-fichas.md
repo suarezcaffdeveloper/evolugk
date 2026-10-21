@@ -80,6 +80,9 @@ Definir cómo se registra y mantiene la información de cada arquero (ficha, med
 - **RF-30** Al retirarlo, fotos y videos existentes se **ocultan de inmediato** y quedan a decisión del admin si se borran. La foto de perfil vuelve al avatar con iniciales.
 - **RF-30b** Al retirarse el consentimiento, se avisa a los admins de la escuela por mail y dentro del sistema.
 - **RF-31** Se conserva el historial de consentimientos otorgados y retirados.
+- **RF-31b** *(Fase 2)* Existe un segundo consentimiento, **independiente y opcional**, de uso de imagen en redes sociales de la escuela (`uso_redes`). El tutor lo acepta o lo rechaza aparte, con su propio texto, y no condiciona el uso de la plataforma. Lo da el tutor, nunca el staff. Se usa en las piezas para redes de la [spec 08](08-contenido-redes.md).
+- **RF-31c** *(Fase 2)* El tutor puede retirar el consentimiento de redes en cualquier momento. Las piezas ya generadas que usen al arquero se ocultan y se avisa al admin; lo ya publicado en redes por la escuela queda a cargo de la escuela, que debe retirarlo.
+- **RF-31d** *(Fase 2)* El consentimiento de redes no reemplaza al de imagen y video: para generar una pieza hacen falta ambos vigentes.
 
 ### Listado y búsqueda
 - **RF-32** Listado de arqueros con búsqueda por nombre y filtros por grupo, estado y nivel. Por defecto muestra los activos.
@@ -103,7 +106,7 @@ Definir cómo se registra y mantiene la información de cada arquero (ficha, med
 ## 5. Reglas de negocio
 - **RN-01** Un arquero pertenece a una sola escuela.
 - **RN-02** Un tutor pertenece a una sola escuela (ver spec 00).
-- **RN-03** El consentimiento es por arquero; vale para fotos, videos y foto de perfil.
+- **RN-03** El consentimiento es por arquero; vale para fotos, videos y foto de perfil. El uso en redes sociales (Fase 2) requiere un consentimiento aparte (RF-31b).
 - **RN-04** El consentimiento no se puede dar por el staff en nombre del tutor.
 - **RN-05** Un arquero activo debe tener fecha de ingreso; es el punto de partida para comparar su progreso.
 - **RN-06** El último admin activo no puede eliminarse a sí mismo; el borrado de un arquero no afecta a los tutores que tengan otros hijos.
@@ -113,7 +116,7 @@ Ver [docs/03-modelo-de-datos.md](../docs/03-modelo-de-datos.md). Cambios a regis
 - `goalkeeper`: agregar `club_actual`, `categoria`, `objetivo`, `estado` (`activo | inactivo | egresado`), contacto de emergencia (`emergencia_nombre`, `emergencia_telefono`, `emergencia_parentesco`); quitar `altura_cm` y `peso_kg` como valores únicos.
 - Nueva `goalkeeper_measurement` (id, school_id, goalkeeper_id, fecha, altura_cm, peso_kg, registrada_por).
 - `group`: agregar `archivado`.
-- `consent`: ya existe; agregar la regla de "vigente" (otorgado y no retirado).
+- `consent`: ya existe; agregar la regla de "vigente" (otorgado y no retirado). En Fase 2 se suma el tipo `uso_redes`.
 
 ## 7. Flujos
 
@@ -161,4 +164,4 @@ Ver [docs/03-modelo-de-datos.md](../docs/03-modelo-de-datos.md). Cambios a regis
 
 ## 11. Preguntas abiertas
 1. ¿Hay un tamaño máximo para el archivo de importación (por ejemplo, 500 filas)? Pendiente de definir.
-2. El texto legal del consentimiento debe redactarse y revisarse con un profesional antes de lanzar (tarea, no decisión de producto).
+2. El texto legal del consentimiento debe redactarse y revisarse con un profesional antes de lanzar (tarea, no decisión de producto). Lo mismo vale para el texto del consentimiento de redes (Fase 2).

@@ -14,7 +14,10 @@
 ## Fase 2
 - Línea de tiempo con fotos e hitos.
 - Informe PDF compartible, con permiso de la familia.
-- Comparador de video lado a lado.
+- Comparador de video lado a lado, con comparaciones guardadas y publicadas para la familia ([spec 03](../specs/03-videos.md), sección 12).
+- Dictado por voz de comentarios de video (se transcribe a texto y no se guarda el audio).
+- Dibujo sobre el video (anotaciones vectoriales sobre un cuadro pausado).
+- Contenido para Instagram: piezas con la marca de la escuela listas para descargar y publicar a mano, con consentimiento de redes aparte ([spec 08](../specs/08-contenido-redes.md)).
 - Objetivos y plan de trabajo individual.
 - Link mágico para la familia.
 - Exportar a Excel/CSV los informes de asistencia y cobranza.
@@ -31,9 +34,10 @@
 - Lesiones y carga física.
 
 ## Orden de specs
-`00-auth-y-tenancy` → `01-arqueros-y-fichas` → `02-evaluaciones` → `03-videos` → `04-portal-familia` → `05-asistencia` → `06-pagos-y-avisos` → `07-planes-y-suscripciones`.
+`00-auth-y-tenancy` → `01-arqueros-y-fichas` → `02-evaluaciones` → `03-videos` → `04-portal-familia` → `05-asistencia` → `06-pagos-y-avisos` → `07-planes-y-suscripciones` → `08-contenido-redes` (Fase 2).
 
 ## Tareas de contenido previas al lanzamiento
 - Redactar y validar las guías de puntajes de las 8 categorías de la rúbrica.
 - Redactar y revisar con un profesional el texto del consentimiento, la política de privacidad y los términos de uso.
 - Confirmar los precios vigentes de Mux (o del proveedor de video elegido), Supabase y Vercel.
+- Antes de lanzar la Fase 2: redactar y revisar con un profesional el consentimiento de uso en redes, y elegir el proveedor de voz a texto (precio, español rioplatense y no retención del audio).

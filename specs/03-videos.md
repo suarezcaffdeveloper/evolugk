@@ -25,8 +25,10 @@ Permitir que los profesores suban clips cortos de cada arquero desde el celular,
 - Comentarios o respuestas de la familia.
 - Descarga por parte de la familia.
 - Archivado o borrado automático por antigüedad.
-- Comparador de videos lado a lado.
-- Edición de video (recorte, cámara lenta, dibujos sobre el video).
+- Comparador de videos lado a lado (Fase 2, ver sección 12).
+- Dictado por voz de comentarios (Fase 2, ver sección 12).
+- Dibujo sobre el video (Fase 2, ver sección 12).
+- Edición de video (recorte, cámara lenta).
 - Subida diferida sin conexión.
 
 ## 3. Actores
@@ -157,3 +159,90 @@ Ver [docs/03-modelo-de-datos.md](../docs/03-modelo-de-datos.md):
 
 ## 11. Preguntas abiertas
 1. Elección final del proveedor de video: se decide en arquitectura; la spec es independiente del proveedor.
+2. Elección del proveedor de voz a texto para el dictado (sección 12): se decide en arquitectura; confirmar precio, soporte de español rioplatense y política de no retención del audio.
+
+## 12. Ampliaciones de Fase 2
+Tres funciones sobre el reproductor y los comentarios. No cambian las reglas del MVP: lo que no se menciona acá se mantiene como arriba.
+
+### 12.1 Dictado por voz de comentarios
+**Objetivo:** que el profesor dicte en lugar de escribir, más rápido y práctico en la cancha. El resultado es siempre un comentario de texto.
+
+- **RF-35** En el cuadro de comentario hay un botón de micrófono. El profesor mantiene o toca para grabar y vuelve a tocar para terminar.
+- **RF-36** Cada dictado dura hasta 60 segundos. Si hace falta más, se dicta en varios comentarios.
+- **RF-37** Al terminar, el audio se envía a un servicio de voz a texto (interfaz propia `TranscriptionProvider`, intercambiable, en español rioplatense) y el texto aparece en el cuadro de comentario para que el profesor lo **revise y edite** antes de guardar.
+- **RF-38** El comentario dictado conserva la marca de tiempo del video en el momento en que se empezó a dictar, igual que uno escrito (RF-15). El profesor puede cambiarla o dejarlo general.
+- **RF-39** El audio **no se guarda**: se descarta apenas se obtiene el texto, o si la transcripción falla. La familia nunca lo escucha; solo lee el texto.
+- **RF-40** Si la transcripción falla o no hay conexión, se informa claramente y el profesor puede escribir el comentario a mano. No se pierde lo ya escrito.
+- **RF-41** Un comentario dictado se trata exactamente igual que uno escrito: mismos permisos de edición y borrado (RF-17), misma visibilidad para la familia (RF-16).
+
+### 12.2 Dibujo sobre el video
+**Objetivo:** que el profesor pause el video y marque algo sobre la imagen (posición de manos, de pies, ángulo del cuerpo) para que el arquero y su familia lo vean.
+
+- **RF-42** El staff puede pausar el video en cualquier momento y activar el modo dibujo sobre ese cuadro.
+- **RF-43** Herramientas: lápiz, goma de borrar, elección de color (paleta corta), grosor (fino, medio, grueso), deshacer y borrar todo.
+- **RF-44** El dibujo se guarda como **anotación**: trazos vectoriales (puntos, color y grosor) asociados al segundo del video. No modifica el video ni consume minutos de la cuota.
+- **RF-45** Los puntos se guardan en coordenadas relativas al cuadro del video (0 a 1), para que la anotación se vea igual en cualquier tamaño de pantalla, vertical u horizontal.
+- **RF-46** Una anotación puede quedar sola o asociada a un comentario; en ese caso se muestra al tocar el comentario.
+- **RF-47** Al reproducir, al llegar al segundo de una anotación el reproductor se pausa en ese cuadro y la muestra; el usuario sigue con un toque. Las anotaciones aparecen como marcas en la barra de tiempo.
+- **RF-48** El autor puede editar y borrar sus anotaciones; el admin puede editar o borrar cualquiera (como en RF-17).
+- **RF-49** La familia ve las anotaciones de un video publicado, en solo lectura. No dibuja.
+- **RF-50** Máximo 20 anotaciones por video.
+
+### 12.3 Comparación de clips
+**Objetivo:** mostrar la evolución poniendo dos clips del mismo arquero lado a lado, por ejemplo el mismo ejercicio hace 3 meses y hoy.
+
+- **RF-51** El staff elige dos videos **del mismo arquero** y los ve lado a lado (en vertical, uno sobre otro, en pantallas angostas). Por defecto el más antiguo queda a la izquierda o arriba.
+- **RF-52** Ambos videos deben estar en estado `listo`. El selector permite filtrar por tema para encontrar el mismo ejercicio.
+- **RF-53** Reproducción: un control común que reproduce, pausa y mueve los dos a la vez, y la opción de moverlos de forma independiente para alinear el momento de cada clip. Cada clip se muestra con su fecha.
+- **RF-54** El profesor puede comparar al vuelo sin guardar nada, o **guardar la comparación** con un título y una nota opcionales.
+- **RF-55** Una comparación guardada nace en **borrador**, visible solo para el staff, y se puede **publicar**. Solo puede publicarse si sus dos videos están publicados.
+- **RF-56** La familia ve las comparaciones publicadas de sus arqueros, en solo lectura, con la misma reproducción privada del RF-22 para cada clip. Aparece como novedad en el portal.
+- **RF-57** No se comparan clips de arqueros distintos.
+- **RF-58** Pueden verse en la comparación las anotaciones de cada video (RF-49).
+- **RF-59** La comparación no genera mail propio.
+
+### Reglas de negocio (Fase 2)
+- **RN-08** Las anotaciones, los comentarios dictados y las comparaciones pertenecen a una escuela y a un arquero, igual que el video.
+- **RN-09** Ningún audio se conserva. Solo se guarda el texto confirmado por el profesor.
+- **RN-10** Si se borra un video, se borran sus anotaciones y las comparaciones guardadas que lo incluyan.
+- **RN-11** Si se despublica un video incluido en una comparación publicada, la comparación vuelve a borrador.
+- **RN-12** Sin consentimiento vigente (RF-32) se ocultan también las anotaciones y comparaciones del arquero.
+- **RN-13** El costo del dictado se mide por minuto de audio procesado; no entra en la cuota de minutos de video.
+
+### Datos involucrados (Fase 2)
+Ver [docs/03-modelo-de-datos.md](../docs/03-modelo-de-datos.md):
+- `video_annotation`: `school_id`, `video_id`, `autor_id`, `segundo`, `comentario_id` opcional, `trazos` (datos vectoriales).
+- `video_comparison`: `school_id`, `goalkeeper_id`, `autor_id`, `video_a_id`, `video_b_id`, `titulo` opcional, `nota` opcional, `estado_publicacion` (`borrador | publicado`), `publicado_en`.
+- `video_comment`: sin cambios. Un comentario dictado es un comentario de texto.
+
+### Flujos (Fase 2)
+**F7 — Comentar dictando:** el profesor mira el video → toca el micrófono → habla → revisa el texto → guarda.
+
+**F8 — Marcar sobre la imagen:** pausa → activa el dibujo → traza y elige color → guarda la anotación (sola o con un comentario).
+
+**F9 — Mostrar progreso:** el profesor abre "Comparar" desde la ficha → elige dos clips del mismo tema → los ve sincronizados → guarda y publica la comparación → la familia la ve en el portal.
+
+### Criterios de aceptación (Fase 2)
+- **CA-13** Dado un comentario dictado, cuando el profesor lo guarda, entonces queda guardado solo el texto y no existe ningún archivo de audio.
+- **CA-14** Dada una transcripción que falla, entonces el profesor puede escribir el comentario a mano sin perder lo anterior.
+- **CA-15** Dada una anotación en el segundo 12, cuando la familia llega al segundo 12 de un video publicado, entonces el reproductor se pausa y muestra el dibujo.
+- **CA-16** Dado un video en borrador con anotaciones, cuando la familia abre el portal, entonces no ve el video ni las anotaciones.
+- **CA-17** Dado un intento de comparar clips de arqueros distintos, entonces se rechaza.
+- **CA-18** Dada una comparación con un video en borrador, cuando el profesor intenta publicarla, entonces se bloquea con un mensaje claro.
+- **CA-19** Dada una comparación publicada, cuando se despublica uno de sus videos, entonces la comparación deja de verse para la familia.
+- **CA-20** Dado un consentimiento retirado, entonces la familia deja de ver las anotaciones y comparaciones del arquero al instante.
+- **CA-21** Dado un video borrado, entonces se eliminan sus anotaciones y las comparaciones guardadas que lo incluían.
+
+### Casos borde (Fase 2)
+- Dictado en un lugar muy ruidoso o con mala transcripción: el profesor corrige el texto antes de guardar.
+- Cierre de la app durante un dictado: se descarta el audio; no queda nada a medias.
+- Dibujo en un video que luego se despublica: la anotación se conserva, pero se oculta junto con el video.
+- Dos clips de duraciones muy distintas: cada uno termina por su cuenta; el control común sigue hasta el final del más largo.
+- Celular en horizontal o en vertical: las anotaciones mantienen su posición sobre la imagen.
+- Comparación guardada con un video que luego se borra: se elimina la comparación y se avisa al autor.
+
+### Seguridad y privacidad (Fase 2)
+- El audio del dictado puede captar voces de menores en la cancha: por eso no se almacena y se envía solo al proveedor de voz a texto contratado, que no debe conservarlo ni usarlo para entrenar modelos. Debe validarse antes de elegir el proveedor.
+- La transcripción no incluye datos del arquero hacia el proveedor: se envía solo el audio, sin identificadores.
+- Anotaciones y comparaciones heredan el aislamiento por `school_id` y las reglas de consentimiento y publicación del video.
+- Altas, ediciones, publicaciones y borrados de anotaciones y comparaciones quedan auditados.

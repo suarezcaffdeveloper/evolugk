@@ -2,7 +2,7 @@
 
 Una sola base Postgres (Supabase). **Toda tabla de negocio lleva `school_id`** y tiene política RLS que lo compara con el de la sesión. Las tablas globales (rúbrica) no llevan `school_id` y son de solo lectura.
 
-Este documento refleja las specs [00](../specs/00-auth-y-tenancy.md) a [06](../specs/06-pagos-y-avisos.md).
+Este documento refleja las specs [00](../specs/00-auth-y-tenancy.md) a [07](../specs/07-planes-y-suscripciones.md) y, para lo marcado *(Fase 2)*, la [08](../specs/08-contenido-redes.md) y la sección 12 de la [03](../specs/03-videos.md).
 
 ## Entidades
 
@@ -32,8 +32,9 @@ Este documento refleja las specs [00](../specs/00-auth-y-tenancy.md) a [06](../s
 - `guardian` (id, school_id, nombre, apellido, telefono, email opcional, codigo_acceso, pin_hash, pin_cambiado, pin_intentos_fallidos, bloqueado_hasta, primer_ingreso_completado)
 - `goalkeeper_guardian` (goalkeeper_id, guardian_id, school_id, parentesco: `madre | padre | tutor | abuelo | otro | el_mismo`)
   - Todo arquero tiene al menos un tutor; un arquero mayor de 18 años puede ser su propio tutor (`el_mismo`).
-- `consent` (id, school_id, goalkeeper_id, guardian_id, tipo: `imagen_video`, otorgado_en, retirado_en)
+- `consent` (id, school_id, goalkeeper_id, guardian_id, tipo: `imagen_video` | `uso_redes` *(Fase 2)*, otorgado_en, retirado_en)
   - Consentimiento **vigente** = otorgado y no retirado. Basta uno de los tutores del arquero. Se conserva el historial.
+  - `uso_redes` es independiente y opcional; para generar una pieza de redes hacen falta ambos tipos vigentes.
 - `guardian_session` (id, school_id, guardian_id, expira_en, revocada)
 - `guardian_seen` (guardian_id, goalkeeper_id, school_id, seccion, visto_en) — novedades "nuevo" del portal (últimos 30 días)
 
@@ -55,6 +56,14 @@ Este documento refleja las specs [00](../specs/00-auth-y-tenancy.md) a [06](../s
   - `tema`: una categoría de la rúbrica u `otro`.
   - Minutos usados por escuela = suma de `duracion_seg` de sus videos no eliminados.
 - `video_comment` (id, school_id, video_id, autor_id, segundo opcional, texto)
+  - Un comentario dictado por voz (Fase 2) se guarda igual que uno escrito: solo el texto. El audio no se conserva.
+- `video_annotation` *(Fase 2)* (id, school_id, video_id, autor_id, segundo, comentario_id opcional, trazos) — dibujo vectorial sobre un cuadro del video; `trazos` guarda puntos en coordenadas relativas (0 a 1), color y grosor. Máximo 20 por video. Hereda estado y visibilidad del video.
+- `video_comparison` *(Fase 2)* (id, school_id, goalkeeper_id, autor_id, video_a_id, video_b_id, titulo opcional, nota opcional, estado_publicacion: `borrador | publicado`, publicado_en) — ambos videos del mismo arquero; solo se publica si ambos están publicados.
+
+### Contenido para redes *(Fase 2)*
+- `social_post` (id, school_id, goalkeeper_id opcional, tipo: `exercise_clip | progress | before_after | family_view | how_it_works`, origen_tipo, origen_id, texto, estado: `sugerida | aprobada | descartada | publicada`, generada_en, vence_en, aprobada_por)
+  - Pieza sugerida para Instagram. Solo `school_admin` la ve. Se genera solo con consentimiento de imagen y video y de redes vigentes (spec 08).
+- `social_post_asset` (id, school_id, social_post_id, formato: `vertical | feed`, tipo_archivo: `image | video`, ruta) — archivo generado, privado, con URL firmada.
 
 ### Asistencia
 - `attendance_session` (id, school_id, group_id, fecha, estado: `abierta | suspendida`, motivo_suspension, creada_por) — único por (`group_id`, `fecha`)
@@ -73,7 +82,8 @@ Para cada tabla con `school_id`:
 - `SELECT/INSERT/UPDATE/DELETE` permitidos solo si `school_id = auth.school_id()` (función que lee el claim de la sesión).
 - Los `coach` ven todos los arqueros de su escuela; los grupos no restringen acceso. Cargan evaluaciones, notas, videos, medidas y asistencia de cualquier arquero activo. No editan datos personales ni borran.
 - `fee`, `fee_revision` y los avisos de cuotas: solo `school_admin`.
-- Borradores (evaluaciones, videos): visibles solo para su autor y los admins.
+- Borradores (evaluaciones, videos, comparaciones): visibles solo para su autor y los admins.
+- `social_post` y `social_post_asset`: solo `school_admin`; nunca visibles para la familia ni para el profesor.
 - Familia: las lecturas pasan por una vista o función que filtra por tutor vinculado, `estado = publicada/publicado`, `visible_familia = true` en notas y consentimiento vigente para videos y fotos. Nunca devuelven el contacto de emergencia ni notas internas ni motivos de justificación.
 - `rubric_*`: lectura para todos, escritura solo por el operador.
 - `platform_admin` accede por rol de servicio, nunca desde el cliente.

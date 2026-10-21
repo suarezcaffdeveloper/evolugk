@@ -38,5 +38,10 @@ El costo crece con los minutos acumulados, no con la cantidad de escuelas.
 - Borrado manual de videos por el admin (el archivado automático queda fuera del MVP).
 - Proveedor intercambiable (interfaz `VideoProvider`).
 
+## Costos de la Fase 2
+- **Dictado por voz (voz a texto):** unos US$0,003–0,006 por minuto de audio. Con el escenario de referencia (2.000 arqueros, 3 clips por mes, unos 3 comentarios de 15 segundos por clip) son ~4.500 minutos por mes, es decir **~US$15–30 por mes en total**, menos de US$0,015 por arquero. El audio no se guarda, así que no suma almacenamiento ni cuota. Precios de referencia a confirmar con el proveedor elegido.
+- **Dibujo y comparador:** sin costo adicional de video; las anotaciones son datos livianos y la comparación reproduce los clips ya guardados (suma reproducción).
+- **Piezas para Instagram:** costo de procesar y guardar los videos generados. Se controla con un tope mensual de piezas por escuela (ver [spec 08](../specs/08-contenido-redes.md)). A estimar según la técnica de generación elegida.
+
 ## Otros costos a estimar
 Supabase (base de datos y storage), Vercel, mail transaccional, dominio, y la verificación en dos pasos del operador (sin costo si se usa una app de autenticación). A cotizar antes de fijar precios.

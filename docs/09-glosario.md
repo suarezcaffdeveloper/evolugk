@@ -30,6 +30,10 @@ Los nombres de código, tablas y columnas van **en inglés**; la interfaz y los 
 | nota | `note` |
 | video | `video` |
 | comentario de video | `video_comment` |
+| anotación de video (Fase 2) | `video_annotation` |
+| comparación de videos (Fase 2) | `video_comparison` |
+| pieza para redes (Fase 2) | `social_post` |
+| archivo de la pieza (Fase 2) | `social_post_asset` |
 | sesión de asistencia | `attendance_session` |
 | marca de asistencia | `attendance_entry` |
 | revisión de asistencia | `attendance_revision` |
@@ -103,6 +107,21 @@ Categorías de la rúbrica (`key`): `save_technique` (atajada), `aerial_play` (j
 | subido_en / publicado_en | `uploaded_at` / `published_at` |
 | segundo | `second` |
 | proveedor / proveedor_asset_id | `provider` / `provider_asset_id` |
+| trazos (de una anotación) | `strokes` |
+| comentario_id | `comment_id` |
+| video_a_id / video_b_id | `video_a_id` / `video_b_id` |
+| titulo / nota (de la comparación) | `title` / `note` |
+
+## Contenido para redes (Fase 2)
+| Español | Inglés |
+|---|---|
+| consentimiento de imagen y video / de uso en redes | `consent.type`: `media` / `social` (en las specs: `imagen_video` / `uso_redes`) |
+| tipo de pieza: clip de ejercicio / progreso / antes y después / cómo lo ve la familia / cómo funciona | `exercise_clip` / `progress` / `before_after` / `family_view` / `how_it_works` |
+| estado: sugerida / aprobada / descartada / publicada | `status`: `suggested` / `approved` / `discarded` / `published` |
+| formato: vertical / feed | `format`: `vertical` / `feed` |
+| tipo de archivo | `file_type`: `image` / `video` |
+| origen_tipo / origen_id | `source_type` / `source_id` |
+| vence_en / generada_en / aprobada_por | `expires_at` / `generated_at` / `approved_by` |
 
 ## Asistencia
 | Español | Inglés |

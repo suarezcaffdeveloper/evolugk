@@ -36,7 +36,7 @@ La gestión administrativa es soporte; el diferencial es el progreso.
 9. Cuotas: ciclo individual por arquero, registro manual del pago, resumen de cobranza mensual y mails de aviso de vencimiento. Sin montos ni cobro online.
 
 ## Fuera del MVP
-Línea de tiempo con fotos e hitos, registro de partidos, objetivos y plan individual, informe PDF compartible, comparador de video lado a lado, WhatsApp, MercadoPago, multi-sede, rúbrica configurable, lesiones y carga física. Ver [07-roadmap](07-roadmap.md).
+Línea de tiempo con fotos e hitos, registro de partidos, objetivos y plan individual, informe PDF compartible, comparador de video lado a lado, dictado por voz y dibujo sobre el video, contenido para Instagram, WhatsApp, MercadoPago, multi-sede, rúbrica configurable, lesiones y carga física. Ver [07-roadmap](07-roadmap.md).
 
 ## Principios
 - **Mobile-first para el profesor:** cargar una evaluación o un video no debe tomar más de un minuto.
