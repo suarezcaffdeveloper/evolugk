@@ -85,12 +85,20 @@ async function GoalkeepersContent({
           </p>
         </div>
         {isAdmin && (
-          <Link
-            href={`/${session.school.slug}/panel/arqueros/nuevo`}
-            className="inline-flex h-11 items-center rounded-control bg-accent px-4 font-semibold text-on-accent shadow-card hover:brightness-110"
-          >
-            Nuevo arquero
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/${session.school.slug}/panel/arqueros/importar`}
+              className="inline-flex h-11 items-center rounded-control border border-line bg-surface px-4 font-semibold hover:bg-accent-soft"
+            >
+              Importar
+            </Link>
+            <Link
+              href={`/${session.school.slug}/panel/arqueros/nuevo`}
+              className="inline-flex h-11 items-center rounded-control bg-accent px-4 font-semibold text-on-accent shadow-card hover:brightness-110"
+            >
+              Nuevo arquero
+            </Link>
+          </div>
         )}
       </div>
 
