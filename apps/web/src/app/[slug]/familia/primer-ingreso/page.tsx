@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { LegalLinks } from "@/components/legal-document";
 import { Card } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { CONSENT_PARAGRAPHS, CONSENT_TITLE } from "@/lib/consent-text";
@@ -65,6 +66,9 @@ async function FirstLogin({ params }: Pick<PageProps<"/[slug]/familia/primer-ing
         {CONSENT_PARAGRAPHS.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
         ))}
+        <p className="text-sm text-ink-muted">
+          Más información en la <LegalLinks newTab />.
+        </p>
       </div>
 
       <form action={acceptConsentsAction.bind(null, session.schoolSlug)} className="space-y-4">

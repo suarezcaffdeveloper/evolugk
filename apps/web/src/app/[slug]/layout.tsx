@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense, type CSSProperties, type ReactNode } from "react";
+import { LegalLinks } from "@/components/legal-document";
 import { SchoolLogo } from "@/components/school-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { isHex, resolveAccent } from "@/lib/color";
@@ -53,7 +54,10 @@ async function TenantShell({
       </header>
       <div className="flex flex-1 flex-col">{children}</div>
       <footer className="px-4 py-6 text-center text-xs text-ink-muted">
-        Con tecnología de EvoluGK
+        <p>Con tecnología de EvoluGK</p>
+        <p className="mt-1">
+          <LegalLinks />
+        </p>
       </footer>
     </div>
   );

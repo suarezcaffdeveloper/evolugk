@@ -76,7 +76,7 @@ test("alta de arquero, primer ingreso del tutor, consentimiento y retiro", async
   await expect(page.getByText("emergencia", { exact: false })).toHaveCount(0);
 
   // 3) Privacidad: el consentimiento figura vigente y se puede retirar con confirmación.
-  await page.getByRole("link", { name: "Privacidad" }).click();
+  await page.getByRole("link", { name: "Privacidad", exact: true }).click();
   await expect(page.getByText("Vigente")).toBeVisible();
   await page.getByRole("button", { name: "Retirar el consentimiento" }).click();
   await expect(page.getByText("se ocultan al instante", { exact: false }).first()).toBeVisible();
