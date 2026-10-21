@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { tween, usePrefersReducedMotion } from "@/lib/motion";
 
-const WIDTH = 440;
+const WIDTH = 500;
 const HEIGHT = 340;
 const CX = WIDTH / 2;
 const CY = HEIGHT / 2;
@@ -147,7 +147,7 @@ export function RadarChart({ labels, current, entry, mode = "current" }: Props) 
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       role="img"
       aria-label={`Gráfico radar de ${total} categorías. ${summary}.`}
-      className="mx-auto block h-auto w-full max-w-[440px]"
+      className="mx-auto block h-auto w-full max-w-[500px]"
     >
       {/* Anillos */}
       {RINGS.map((ring) => (
@@ -212,6 +212,8 @@ export function RadarChart({ labels, current, entry, mode = "current" }: Props) 
             fill="var(--accent)"
             stroke="var(--surface)"
             strokeWidth={2}
+            // Una categoría sin evaluar no lleva punto: no se inventa un valor (spec 02, CA-03).
+            style={{ opacity: current[i] === null ? 0 : 1 }}
           />
         );
       })}
@@ -224,6 +226,10 @@ export function RadarChart({ labels, current, entry, mode = "current" }: Props) 
         const lines = splitLabel(label);
         const cos = Math.cos(a);
         const anchor = cos > 0.3 ? "start" : cos < -0.3 ? "end" : "middle";
+        const unrated = current[i] === null;
+        // "Sin evaluar" va como una línea más, más chica, debajo del nombre del eje.
+        const rows = unrated ? [...lines, "sin evaluar"] : lines;
+        const firstDy = rows.length === 1 ? 0 : `${-0.55 * (rows.length - 1)}em`;
         return (
           <text
             key={label}
@@ -235,11 +241,14 @@ export function RadarChart({ labels, current, entry, mode = "current" }: Props) 
             fontWeight={600}
             fill="var(--ink-muted)"
           >
-            {lines.map((line, n) => (
+            {rows.map((line, n) => (
               <tspan
                 key={line}
                 x={x}
-                dy={n === 0 ? (lines.length === 2 ? "-0.55em" : 0) : "1.15em"}
+                dy={n === 0 ? firstDy : "1.15em"}
+                fontSize={unrated && n === rows.length - 1 ? 12 : undefined}
+                fontWeight={unrated && n === rows.length - 1 ? 500 : undefined}
+                fontStyle={unrated && n === rows.length - 1 ? "italic" : undefined}
               >
                 {line}
               </tspan>

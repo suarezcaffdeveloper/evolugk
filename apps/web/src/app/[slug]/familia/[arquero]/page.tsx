@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
+import { EvolutionRadar } from "@/components/evolution-radar";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { Notice } from "@/components/ui/notice";
@@ -13,6 +14,8 @@ import {
   STATUS_LABELS,
   type GoalkeeperStatus,
 } from "@/lib/goalkeeper-schemas";
+import { currentEvaluation, radarValues } from "@/lib/evolution";
+import { getFamilyEvolution, toEvolutionSeries } from "@/server/guardian/evaluations";
 import {
   getFamilyGoalkeeperProfile,
   listFamilyGoalkeepers,
@@ -54,11 +57,16 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
   // Un arquero ajeno o inexistente es indistinguible de uno que no existe (CA-12).
   const goalkeeper = goalkeepers.find((g) => g.id === arquero);
   if (!goalkeeper) notFound();
-  const profile = await getFamilyGoalkeeperProfile(db, session, goalkeeper.id);
+  const [profile, evolution] = await Promise.all([
+    getFamilyGoalkeeperProfile(db, session, goalkeeper.id),
+    getFamilyEvolution(db, session, goalkeeper.id),
+  ]);
   if (!profile) notFound();
+  const current = currentEvaluation(toEvolutionSeries(evolution.evaluations));
 
   const today = argentinaDate(new Date());
   const privacyHref = `/${session.schoolSlug}/familia/${goalkeeper.id}/privacidad`;
+  const evolutionHref = `/${session.schoolSlug}/familia/${goalkeeper.id}/evolucion`;
 
   return (
     <PortalFrame slug={session.schoolSlug} goalkeepers={goalkeepers} currentId={goalkeeper.id}>
@@ -84,6 +92,48 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
           </p>
         </Notice>
       )}
+
+      {evolution.newCount > 0 && (
+        <Notice tone="success">
+          <p>
+            {evolution.newCount === 1
+              ? "Hay 1 novedad para ver."
+              : `Hay ${evolution.newCount} novedades para ver.`}{" "}
+            <Link href={`${evolutionHref}`} className="font-bold underline underline-offset-4">
+              Ir a Evolución
+            </Link>
+          </p>
+        </Notice>
+      )}
+
+      <Card className="space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-display text-lg font-bold">Cómo viene</h2>
+          {current && (
+            <Link
+              href={evolutionHref}
+              className="text-sm font-semibold underline underline-offset-4"
+            >
+              Ver evolución
+            </Link>
+          )}
+        </div>
+        {current ? (
+          <EvolutionRadar
+            labels={evolution.categories.map((c) => c.name)}
+            current={radarValues(
+              current,
+              evolution.categories.map((c) => c.key),
+            )}
+            currentLabel={`Última evaluación · ${formatCalendarDate(current.date)}`}
+          />
+        ) : (
+          <p className="text-ink-muted">
+            Todavía no hay evaluaciones publicadas. Cuando los profesores publiquen la primera, la
+            vas a ver acá.
+          </p>
+        )}
+      </Card>
 
       <Card className="space-y-4">
         <h2 className="font-display text-lg font-bold">Ficha</h2>

@@ -4,8 +4,11 @@ import { notFound } from "next/navigation";
 import { Suspense, type CSSProperties, type ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { EvolutionRadar } from "@/components/evolution-radar";
 import { Notice } from "@/components/ui/notice";
 import { argentinaDate, formatCalendarDate } from "@/lib/dates";
+import { EVALUATION_TYPE_LABELS } from "@/lib/evaluation-schemas";
+import { comparison, currentEvaluation, isEvaluationPending, radarValues } from "@/lib/evolution";
 import {
   ageOn,
   FOOT_LABELS,
@@ -14,8 +17,15 @@ import {
   type Foot,
 } from "@/lib/goalkeeper-schemas";
 import { requireStaff } from "@/server/auth/guards";
+import {
+  getCurrentRubric,
+  lastPublishedDates,
+  listEvaluations,
+  listNotes,
+} from "@/server/evaluations";
 import { getGoalkeeperDetail, listGroups, searchGuardians } from "@/server/goalkeepers";
 import { createServiceClient } from "@/server/supabase";
+import { NoteForm } from "./evaluaciones/evaluation-actions";
 import {
   AddGuardian,
   DeleteForm,
@@ -68,16 +78,21 @@ async function GoalkeeperContent({
   const detail = await getGoalkeeperDetail(db, session.school.id, id);
   if (!detail) notFound();
 
-  const { tq } = await searchParams;
+  const { tq, evaluacion } = await searchParams;
   const tutorQuery = (Array.isArray(tq) ? tq[0] : tq)?.trim() ?? "";
   const isAdmin = session.role === "school_admin";
   const today = argentinaDate(new Date());
 
-  const [allGroups, found] = await Promise.all([
+  const viewer = { userId: session.user.id, role: session.role };
+  const [allGroups, found, evaluations, notes, rubric, lastPublished] = await Promise.all([
     isAdmin ? listGroups(db, session.school.id) : Promise.resolve([]),
     isAdmin && tutorQuery
       ? searchGuardians(db, session.school.id, tutorQuery)
       : Promise.resolve([]),
+    listEvaluations(db, session.school.id, id, viewer),
+    listNotes(db, session.school.id, id),
+    getCurrentRubric(db),
+    lastPublishedDates(db, session.school.id, [id]),
   ]);
   const linkedIds = new Set(detail.guardians.map((g) => g.id));
   const matches = found
@@ -97,11 +112,29 @@ async function GoalkeeperContent({
   }[detail.consent];
   const base = `/${session.school.slug}/panel/arqueros`;
 
+  // Evolución: solo con lo publicado (los borradores no entran en el radar, RN-03).
+  const published = evaluations
+    .filter((e) => e.status === "published")
+    .map((e) => ({
+      id: e.id,
+      date: e.date,
+      createdAt: e.createdAt,
+      type: e.type,
+      scores: Object.fromEntries(e.scores.map((s) => [s.key, s.score])),
+    }));
+  const current = currentEvaluation(published);
+  const compared = comparison(published);
+  const categoryKeys = rubric.categories.map((c) => c.key);
+  const isActive = detail.status === "active";
+  const pending = isActive && isEvaluationPending(lastPublished.get(id) ?? null, today);
+
   return (
     <>
       <Link href={base} className="text-sm font-semibold text-ink-muted hover:text-ink">
         ← Arqueros
       </Link>
+
+      {evaluacion === "borrada" && <Notice tone="success">La evaluación se borró.</Notice>}
 
       <div className="rise-in space-y-2">
         <h1 className="font-display text-3xl font-bold leading-tight">
@@ -180,6 +213,89 @@ async function GoalkeeperContent({
             )}
           </Row>
         </dl>
+      </Card>
+
+      <Card className="rise-in space-y-4" style={{ "--i": 1 } as CSSProperties}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-display text-lg font-bold">Evaluaciones</h2>
+            {pending && <Chip tone="warning">Evaluación pendiente</Chip>}
+          </div>
+          {isActive && (
+            <Link
+              href={`${base}/${id}/evaluaciones/nueva`}
+              className="inline-flex h-11 items-center rounded-control bg-accent px-4 font-semibold text-on-accent shadow-card hover:brightness-110"
+            >
+              Nueva evaluación
+            </Link>
+          )}
+        </div>
+        {!isActive && (
+          <p className="text-sm text-ink-muted">
+            Solo se evalúa a arqueros activos. Las evaluaciones anteriores se conservan.
+          </p>
+        )}
+        {current && (
+          <EvolutionRadar
+            labels={rubric.categories.map((c) => c.name)}
+            current={radarValues(current, categoryKeys)}
+            entry={compared ? radarValues(compared.entry, categoryKeys) : null}
+            currentLabel={`Hoy · ${formatCalendarDate(current.date)}`}
+            entryLabel={
+              compared ? `Ingreso · ${formatCalendarDate(compared.entry.date)}` : undefined
+            }
+          />
+        )}
+        {evaluations.length === 0 ? (
+          <p className="text-ink-muted">Todavía no hay evaluaciones cargadas.</p>
+        ) : (
+          <ul className="divide-y divide-line">
+            {evaluations.map((evaluation) => (
+              <li key={evaluation.id}>
+                <Link
+                  href={`${base}/${id}/evaluaciones/${evaluation.id}`}
+                  className="flex min-h-14 flex-wrap items-center justify-between gap-2 py-2 hover:text-accent"
+                >
+                  <span>
+                    <span className="block font-semibold">
+                      {formatCalendarDate(evaluation.date)}
+                    </span>
+                    <span className="block text-sm text-ink-muted">
+                      {EVALUATION_TYPE_LABELS[evaluation.type]}
+                      {evaluation.authorName ? ` · ${evaluation.authorName}` : ""}
+                    </span>
+                  </span>
+                  <Chip tone={evaluation.status === "published" ? "success" : "warning"}>
+                    {evaluation.status === "published" ? "Publicada" : "Borrador"}
+                  </Chip>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card className="rise-in space-y-4" style={{ "--i": 1 } as CSSProperties}>
+        <h2 className="font-display text-lg font-bold">Notas</h2>
+        {isActive && <NoteForm slug={session.school.slug} goalkeeperId={id} />}
+        {notes.length > 0 && (
+          <ul className="divide-y divide-line">
+            {notes.map((note) => (
+              <li key={note.id} className="space-y-1 py-3 first:pt-0 last:pb-0">
+                <p className="whitespace-pre-line">{note.body}</p>
+                <p className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+                  <span>
+                    {note.authorName ?? "Equipo"} ·{" "}
+                    {formatCalendarDate(argentinaDate(new Date(note.createdAt)))}
+                  </span>
+                  <Chip tone={note.visibleToFamily ? "success" : "neutral"}>
+                    {note.visibleToFamily ? "Visible para la familia" : "Interna"}
+                  </Chip>
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
 
       <Card className="rise-in space-y-4" style={{ "--i": 2 } as CSSProperties}>

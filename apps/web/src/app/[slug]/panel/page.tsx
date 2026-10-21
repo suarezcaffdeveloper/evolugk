@@ -4,7 +4,10 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Card } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { argentinaDate, formatCalendarDate } from "@/lib/dates";
 import { requireStaff } from "@/server/auth/guards";
+import { listPendingGoalkeepers } from "@/server/evaluations";
+import { createServiceClient } from "@/server/supabase";
 import { logoutAction } from "../login/actions";
 
 export const metadata: Metadata = {
@@ -29,6 +32,11 @@ export default function PanelPage({ params }: PageProps<"/[slug]/panel">) {
 async function PanelContent({ params }: Pick<PageProps<"/[slug]/panel">, "params">) {
   const { slug } = await params;
   const session = await requireStaff(slug);
+  const pending = await listPendingGoalkeepers(
+    createServiceClient(),
+    session.school.id,
+    argentinaDate(new Date()),
+  );
 
   return (
     <>
@@ -51,6 +59,43 @@ async function PanelContent({ params }: Pick<PageProps<"/[slug]/panel">, "params
           </p>
         </Card>
       </Link>
+
+      {pending.length > 0 && (
+        <Card className="rise-in space-y-3" style={{ "--i": 1 } as CSSProperties}>
+          <div className="space-y-1">
+            <h2 className="font-display text-lg font-bold">Evaluaciones pendientes</h2>
+            <p className="text-ink-muted">
+              {pending.length === 1
+                ? "1 arquero activo no tiene una evaluación publicada en los últimos 90 días."
+                : `${pending.length} arqueros activos no tienen una evaluación publicada en los últimos 90 días.`}
+            </p>
+          </div>
+          <ul className="divide-y divide-line">
+            {pending.slice(0, 8).map((g) => (
+              <li key={g.id}>
+                <Link
+                  href={`/${session.school.slug}/panel/arqueros/${g.id}`}
+                  className="flex min-h-11 items-center justify-between gap-3 py-2 hover:text-accent"
+                >
+                  <span className="font-semibold">
+                    {g.lastName}, {g.firstName}
+                  </span>
+                  <span className="text-sm text-ink-muted">
+                    {g.lastEvaluationDate
+                      ? `Última: ${formatCalendarDate(g.lastEvaluationDate)}`
+                      : "Nunca evaluado"}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {pending.length > 8 && (
+            <p className="text-sm text-ink-muted">
+              Y {pending.length - 8} más en la lista de arqueros.
+            </p>
+          )}
+        </Card>
+      )}
 
       {session.role === "school_admin" && (
         <Link

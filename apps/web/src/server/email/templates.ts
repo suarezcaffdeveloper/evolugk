@@ -162,3 +162,38 @@ export function passwordResetEmail(input: {
     ].join("\n"),
   };
 }
+
+export function evaluationPublishedEmail(input: {
+  to: string;
+  schoolName: string;
+  goalkeeperName: string;
+  link: string;
+  accentColor?: string | null;
+}): EmailMessage {
+  const name = escapeHtml(input.goalkeeperName);
+  return {
+    to: input.to,
+    subject: `Nueva evaluación de ${input.goalkeeperName} en ${input.schoolName}`,
+    html: renderLayout({
+      schoolName: input.schoolName,
+      accentColor: input.accentColor,
+      heading: `Hay una nueva evaluación de ${input.goalkeeperName}`,
+      paragraphs: [
+        `Los profesores de ${escapeHtml(input.schoolName)} publicaron una evaluación de <strong>${name}</strong>.`,
+        "Entrá al portal para ver los puntajes, los comentarios y cómo viene evolucionando.",
+      ],
+      buttonLabel: "Ver la evaluación",
+      link: input.link,
+      footnote:
+        "Recibís este mail porque sos tutor o tutora de este arquero. Para entrar necesitás tu código de acceso y tu PIN.",
+    }),
+    text: [
+      `Los profesores de ${input.schoolName} publicaron una evaluación de ${input.goalkeeperName}.`,
+      "",
+      "Entrá al portal para ver los puntajes, los comentarios y cómo viene evolucionando:",
+      input.link,
+      "",
+      "Recibís este mail porque sos tutor o tutora de este arquero. Para entrar necesitás tu código de acceso y tu PIN.",
+    ].join("\n"),
+  };
+}

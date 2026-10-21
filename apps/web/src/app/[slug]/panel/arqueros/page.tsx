@@ -14,7 +14,9 @@ import {
   STATUS_LABELS,
   STATUSES,
 } from "@/lib/goalkeeper-schemas";
+import { isEvaluationPending } from "@/lib/evolution";
 import { requireStaff } from "@/server/auth/guards";
+import { lastPublishedDates } from "@/server/evaluations";
 import { listGoalkeepers, listGroups, type ConsentStatus } from "@/server/goalkeepers";
 import { createServiceClient } from "@/server/supabase";
 import { Select } from "./goalkeeper-fields";
@@ -60,9 +62,10 @@ async function GoalkeepersContent({
   const groupId = first(query.grupo) || undefined;
 
   const db = createServiceClient();
-  const [goalkeepers, groups] = await Promise.all([
+  const [goalkeepers, groups, lastEvaluation] = await Promise.all([
     listGoalkeepers(db, session.school.id, { q, status, level, groupId }),
     listGroups(db, session.school.id),
+    lastPublishedDates(db, session.school.id),
   ]);
   const today = argentinaDate(new Date());
   const isAdmin = session.role === "school_admin";
@@ -207,6 +210,10 @@ async function GoalkeepersContent({
                   <div className="flex flex-wrap gap-2">
                     <Chip tone={CONSENT[g.consent].tone}>{CONSENT[g.consent].label}</Chip>
                     {g.status !== "active" && <Chip>{STATUS_LABELS[g.status]}</Chip>}
+                    {g.status === "active" &&
+                      isEvaluationPending(lastEvaluation.get(g.id) ?? null, today) && (
+                        <Chip tone="warning">Evaluación pendiente</Chip>
+                      )}
                     {g.level && <Chip>{LEVEL_LABELS[g.level]}</Chip>}
                     {g.groups.map((group) => (
                       <Chip key={group.id}>{group.name}</Chip>
