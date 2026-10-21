@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { Field, FormAlert, Input, describedBy } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -46,6 +47,13 @@ export function LoginForm({ slug }: { slug: string }) {
       <SubmitButton size="lg" className="w-full" pendingText="Ingresando…">
         Ingresar
       </SubmitButton>
+
+      <Link
+        href={`/${slug}/recuperar`}
+        className="block text-center text-sm font-semibold text-ink-muted hover:text-ink"
+      >
+        ¿Olvidaste tu contraseña?
+      </Link>
     </form>
   );
 }

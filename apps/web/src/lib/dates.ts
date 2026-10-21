@@ -25,3 +25,12 @@ export function addDays(date: string, days: number): string {
 export function argentinaDatePlusDays(now: Date, days: number): string {
   return addDays(argentinaDate(now), days);
 }
+
+/** "19 de noviembre de 2026" a partir de una fecha de calendario "AAAA-MM-DD". */
+export function formatCalendarDate(date: string): string {
+  const [y, m, d] = date.split("-").map(Number);
+  // Se formatea en UTC porque es una fecha de calendario sin hora: no debe correrse por husos horarios.
+  return new Intl.DateTimeFormat("es-AR", { dateStyle: "long", timeZone: "UTC" }).format(
+    new Date(Date.UTC(y, m - 1, d)),
+  );
+}

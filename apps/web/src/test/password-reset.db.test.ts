@@ -223,11 +223,11 @@ describe("cambiar la contraseña con el link", () => {
     const user = await freshCoach("reset-valida");
     const tokenHash = await requestToken(user);
 
+    const valid = { password: NEW_PASSWORD, passwordConfirmation: NEW_PASSWORD };
     const bad = await resetPassword(clients(), {
       slug: school.slug,
       tokenHash,
-      password: NEW_PASSWORD,
-      passwordConfirmation: NEW_PASSWORD,
+      ...valid,
       ...override,
     });
     expect(bad).toMatchObject({ ok: false, error: "invalid_input" });

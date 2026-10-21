@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Card } from "@/components/ui/card";
+import { Notice } from "@/components/ui/notice";
 import { normalizeSlug } from "@/lib/slug";
 import { getStaffSession } from "@/server/auth/guards";
 import { LoginForm } from "./login-form";
@@ -11,18 +12,21 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default function StaffLoginPage({ params }: PageProps<"/[slug]/login">) {
+export default function StaffLoginPage({ params, searchParams }: PageProps<"/[slug]/login">) {
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 pb-16">
       <Suspense fallback={<FormSkeleton />}>
-        <LoginContent params={params} />
+        <LoginContent params={params} searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function LoginContent({ params }: Pick<PageProps<"/[slug]/login">, "params">) {
-  const { slug } = await params;
+async function LoginContent({
+  params,
+  searchParams,
+}: Pick<PageProps<"/[slug]/login">, "params" | "searchParams">) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
 
   // Quien ya tiene una sesión válida de esta escuela va directo al panel.
   if (await getStaffSession(slug)) redirect(`/${normalizeSlug(slug)}/panel`);
@@ -33,6 +37,9 @@ async function LoginContent({ params }: Pick<PageProps<"/[slug]/login">, "params
         <h1 className="font-display text-2xl font-bold">Ingreso del equipo</h1>
         <p className="text-sm text-ink-muted">Administradores y profesores.</p>
       </div>
+      {query.restablecida === "1" && (
+        <Notice tone="success">Listo, cambiaste tu contraseña. Ingresá con la nueva.</Notice>
+      )}
       <LoginForm slug={normalizeSlug(slug)} />
     </Card>
   );

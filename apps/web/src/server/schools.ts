@@ -217,3 +217,59 @@ export async function listSchools(admin: SupabaseClient): Promise<SchoolSummary[
     };
   });
 }
+
+export type SchoolDetail = {
+  id: string;
+  name: string;
+  slug: string;
+  status: "active" | "suspended";
+  suspendedAt: Date | null;
+  createdAt: Date;
+  subscription: {
+    monthlyPriceArs: number;
+    goalkeeperLimit: number;
+    videoMinutesLimit: number;
+    trialUntil: string | null;
+    coveredUntil: string;
+  } | null;
+};
+
+/** Datos de una escuela y sus condiciones, por identificador (null si no existe). */
+export async function getSchoolDetail(
+  admin: SupabaseClient,
+  rawSlug: string,
+): Promise<SchoolDetail | null> {
+  const slug = rawSlug.trim().toLowerCase();
+  if (!isValidSlug(slug)) return null;
+
+  const { data: school } = await admin
+    .from("school")
+    .select("id, name, slug, status, suspended_at, created_at")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!school) return null;
+
+  const { data: sub } = await admin
+    .from("subscription")
+    .select("monthly_price_ars, goalkeeper_limit, video_minutes_limit, trial_until, covered_until")
+    .eq("school_id", school.id)
+    .maybeSingle();
+
+  return {
+    id: school.id,
+    name: school.name,
+    slug: school.slug,
+    status: school.status,
+    suspendedAt: school.suspended_at ? new Date(school.suspended_at) : null,
+    createdAt: new Date(school.created_at),
+    subscription: sub
+      ? {
+          monthlyPriceArs: Number(sub.monthly_price_ars),
+          goalkeeperLimit: sub.goalkeeper_limit,
+          videoMinutesLimit: sub.video_minutes_limit,
+          trialUntil: sub.trial_until,
+          coveredUntil: sub.covered_until,
+        }
+      : null,
+  };
+}

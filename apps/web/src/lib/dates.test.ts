@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, argentinaDate, argentinaDatePlusDays } from "./dates";
+import { addDays, argentinaDate, argentinaDatePlusDays, formatCalendarDate } from "./dates";
 
 describe("argentinaDate", () => {
   it("usa la fecha de Argentina (UTC-3), no la de UTC", () => {
@@ -26,5 +26,15 @@ describe("addDays", () => {
 describe("argentinaDatePlusDays", () => {
   it("cuenta los días desde la fecha de Argentina", () => {
     expect(argentinaDatePlusDays(new Date("2026-10-21T01:30:00Z"), 30)).toBe("2026-11-19");
+  });
+});
+
+describe("formatCalendarDate", () => {
+  it.each([
+    ["2026-11-19", "19 de noviembre de 2026"],
+    ["2027-01-01", "1 de enero de 2027"],
+    ["2028-02-29", "29 de febrero de 2028"],
+  ])("%s -> %s", (date, expected) => {
+    expect(formatCalendarDate(date)).toBe(expected);
   });
 });

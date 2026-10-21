@@ -24,7 +24,7 @@ export async function listTeam(admin: SupabaseClient, schoolId: string): Promise
   const emails = rows.length
     ? await admin.rpc("get_user_emails", { p_ids: rows.map((r) => r.user_id) })
     : { data: [] as { user_id: string; email: string }[] };
-  const emailById = new Map(
+  const emailById = new Map<string, string>(
     (emails.data ?? []).map((e: { user_id: string; email: string }) => [e.user_id, e.email]),
   );
 

@@ -110,3 +110,10 @@ export async function requireOperator(required: MfaState): Promise<OperatorSessi
   if (session.mfa !== required) redirect(OPERATOR_PATH[session.mfa]);
   return session;
 }
+
+/** Exige un administrador de la escuela (los profesores no entran). Un profesor va al panel; sin sesión, al ingreso. */
+export async function requireSchoolAdmin(rawSlug: string): Promise<StaffSession> {
+  const session = await requireStaff(rawSlug);
+  if (session.role !== "school_admin") redirect(`/${session.school.slug}/panel`);
+  return session;
+}

@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { Card } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -43,6 +44,21 @@ async function PanelContent({ params }: Pick<PageProps<"/[slug]/panel">, "params
           en las próximas versiones.
         </p>
       </Card>
+
+      {session.role === "school_admin" && (
+        <Link
+          href={`/${session.school.slug}/panel/equipo`}
+          className="rise-in block rounded-card focus-visible:outline-offset-4"
+          style={{ "--i": 2 } as CSSProperties}
+        >
+          <Card interactive className="space-y-1">
+            <h2 className="font-display text-lg font-bold">Equipo</h2>
+            <p className="text-ink-muted">
+              Invitá profesores y administradores, y gestioná quién tiene acceso.
+            </p>
+          </Card>
+        </Link>
+      )}
 
       <form
         action={logoutAction.bind(null, session.school.slug)}

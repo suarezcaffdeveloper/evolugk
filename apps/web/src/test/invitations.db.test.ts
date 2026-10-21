@@ -28,7 +28,6 @@ import {
   createAnonClient,
   createSchool,
   createStaff,
-  createUser,
   purgeLeftovers,
   type TestSchool,
   type TestUser,
