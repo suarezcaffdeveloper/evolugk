@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { describedBy, Field, FormAlert, Input } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -18,7 +18,23 @@ type Props = {
   existingGuardian?: { id: string; name: string; phone: string } | null;
 };
 
-export function NewGoalkeeperForm({ slug, schoolName, groups, existingGuardian }: Props) {
+export function NewGoalkeeperForm(props: Props) {
+  // "Dar de alta a otro" navega a la misma ruta, así que el componente no se
+  // desmonta y el estado de la acción (arquero creado) sobreviviría. Cambiar la
+  // key remonta el formulario con el estado y los campos en blanco.
+  const [formKey, setFormKey] = useState(0);
+  return (
+    <NewGoalkeeperFormInner key={formKey} {...props} onReset={() => setFormKey((k) => k + 1)} />
+  );
+}
+
+function NewGoalkeeperFormInner({
+  slug,
+  schoolName,
+  groups,
+  existingGuardian,
+  onReset,
+}: Props & { onReset: () => void }) {
   const [state, formAction] = useActionState<CreateState, FormData>(
     createGoalkeeperAction.bind(null, slug),
     {},
@@ -57,6 +73,7 @@ export function NewGoalkeeperForm({ slug, schoolName, groups, existingGuardian }
           </Link>
           <Link
             href={`/${slug}/panel/arqueros/nuevo`}
+            onClick={onReset}
             className="inline-flex h-11 items-center rounded-control border border-line bg-surface px-4 font-semibold hover:bg-accent-soft"
           >
             Dar de alta a otro
