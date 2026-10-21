@@ -9,8 +9,10 @@ import { requireOperator } from "@/server/auth/guards";
 import { listPendingInvitations } from "@/server/invitations";
 import { getSchoolDetail } from "@/server/schools";
 import { createServiceClient } from "@/server/supabase";
+import { getVideoQuota } from "@/server/videos";
 import { listTeam } from "@/server/team";
 import { ResendInvitation } from "./resend-invitation";
+import { VideoLimitForm } from "./video-limit-form";
 import { SuspendControl } from "./suspend-control";
 
 export const metadata: Metadata = { title: "Escuela · EvoluGK", robots: { index: false } };
@@ -45,9 +47,10 @@ async function SchoolDetail({ params }: Pick<PageProps<"/operator/escuelas/[slug
   const school = await getSchoolDetail(admin, slug);
   if (!school) notFound();
 
-  const [team, pending] = await Promise.all([
+  const [team, pending, videoQuota] = await Promise.all([
     listTeam(admin, school.id),
     listPendingInvitations(admin, school.id),
+    getVideoQuota(admin, school.id),
   ]);
   const admins = team.filter((member) => member.role === "school_admin");
   const pendingAdmins = pending.filter((invitation) => invitation.role === "school_admin");
@@ -80,6 +83,22 @@ async function SchoolDetail({ params }: Pick<PageProps<"/operator/escuelas/[slug
         ) : (
           <p className="text-ink-muted">Esta escuela no tiene condiciones cargadas.</p>
         )}
+      </Card>
+
+      <Card className="rise-in space-y-3" style={{ "--i": 1 } as CSSProperties}>
+        <h2 className="font-display text-lg font-bold">Uso de video</h2>
+        <p className="text-sm text-ink-muted">
+          {NUMBER.format(videoQuota.usedMinutes)} de {NUMBER.format(videoQuota.limitMinutes)}{" "}
+          minutos usados ({videoQuota.percent}%).
+          {videoQuota.level === "warning" && " La escuela pasó el 80% de su tope."}
+          {videoQuota.level === "blocked" &&
+            " La escuela llegó al 100%: no puede subir más videos."}
+        </p>
+        <VideoLimitForm
+          schoolId={school.id}
+          slug={school.slug}
+          currentMinutes={videoQuota.limitMinutes}
+        />
       </Card>
 
       <Card className="rise-in space-y-4" style={{ "--i": 2 } as CSSProperties}>

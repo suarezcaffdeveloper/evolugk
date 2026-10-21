@@ -7,7 +7,11 @@ import { getAppUrl } from "@/server/config";
 import { createConfiguredTransport } from "@/server/email/transport";
 import { deliverInvitation, describeDelivery } from "@/server/invitation-delivery";
 import { createInvitation } from "@/server/invitations";
-import { createSchoolWithAdminInvitation, setSchoolSuspended } from "@/server/schools";
+import {
+  createSchoolWithAdminInvitation,
+  setSchoolSuspended,
+  setVideoMinutesLimit,
+} from "@/server/schools";
 import { createServiceClient } from "@/server/supabase";
 import { schoolBrandingTag } from "@/server/tenant";
 
@@ -109,6 +113,41 @@ export async function setSuspendedAction(
   revalidatePath("/operator");
   revalidatePath(`/operator/escuelas/${result.slug}`);
   return { done: suspend ? "suspended" : "reactivated" };
+}
+
+export type VideoLimitState = { error?: string; ok?: boolean };
+
+/**
+ * El operador cambia el tope de minutos de video de una escuela (spec 07, RF-04). Se aplica de
+ * inmediato y destraba las subidas si la escuela estaba bloqueada al 100%.
+ */
+export async function setVideoLimitAction(
+  schoolId: string,
+  slug: string,
+  _previous: VideoLimitState,
+  formData: FormData,
+): Promise<VideoLimitState> {
+  const operator = await requireOperator("ready");
+  const raw = formData.get("minutes");
+  const minutes = typeof raw === "string" && /^\d+$/.test(raw.trim()) ? Number(raw.trim()) : NaN;
+  if (!Number.isInteger(minutes)) return { error: "Ingresá un número entero de minutos." };
+
+  const result = await setVideoMinutesLimit(createServiceClient(), {
+    schoolId,
+    minutes,
+    actorId: operator.user.id,
+  });
+  if (!result.ok) {
+    return {
+      error:
+        result.error === "invalid"
+          ? "El tope tiene que ser un número entero entre 0 y 100.000 minutos."
+          : "No pudimos cambiar el tope. Intentá de nuevo.",
+    };
+  }
+  revalidatePath(`/operator/escuelas/${slug}`);
+  revalidatePath("/operator");
+  return { ok: true };
 }
 
 export type ResendState = { error?: string; delivery?: DeliveryInfo & { email: string } };

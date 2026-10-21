@@ -16,6 +16,9 @@ import {
   getRubricVersionCategories,
 } from "@/server/evaluations";
 import { createServiceClient } from "@/server/supabase";
+import { listEvaluationVideos, listVideos } from "@/server/videos";
+import { VIDEO_TOPIC_LABELS, formatDuration } from "@/lib/video-schemas";
+import { EvaluationVideosForm } from "../../videos/video-controls";
 import { DeleteEvaluationButton, PublishButton, UnpublishButton } from "../evaluation-actions";
 
 export const metadata: Metadata = {
@@ -51,10 +54,12 @@ async function EvaluationContent({ params, searchParams }: Pick<Props, "params" 
   // Un borrador ajeno es indistinguible de uno que no existe.
   if (!evaluation || evaluation.goalkeeperId !== id) notFound();
 
-  const [categories, context, query] = await Promise.all([
+  const [categories, context, query, goalkeeperVideos, attached] = await Promise.all([
     getRubricVersionCategories(db, evaluation.rubricVersionId),
     getEvaluationContext(db, session.school.id, id),
     searchParams,
+    listVideos(db, session.school.id, id),
+    listEvaluationVideos(db, session.school.id, evaluationId),
   ]);
   const isAdmin = session.role === "school_admin";
   const canManage = isAdmin || evaluation.authorId === session.user.id;
@@ -127,6 +132,37 @@ async function EvaluationContent({ params, searchParams }: Pick<Props, "params" 
             <p className="whitespace-pre-line">{evaluation.comment}</p>
           </div>
         )}
+      </Card>
+
+      <Card className="rise-in space-y-3" style={{ "--i": 2 } as CSSProperties}>
+        <h2 className="font-display text-lg font-bold">Videos de respaldo</h2>
+        {canManage ? (
+          <EvaluationVideosForm
+            slug={session.school.slug}
+            goalkeeperId={id}
+            evaluationId={evaluationId}
+            options={goalkeeperVideos
+              .filter((v) => v.playable || attached.some((a) => a.id === v.id))
+              .map((v) => ({
+                id: v.id,
+                title: v.title,
+                subtitle: `${VIDEO_TOPIC_LABELS[v.topic]}${v.durationSec !== null ? ` · ${formatDuration(v.durationSec)}` : ""} · ${v.publicationStatus === "published" ? "Publicado" : "Borrador"}`,
+              }))}
+            selected={attached.map((v) => v.id)}
+          />
+        ) : attached.length === 0 ? (
+          <p className="text-ink-muted">Esta evaluación no tiene videos adjuntos.</p>
+        ) : (
+          <ul className="list-disc pl-5">
+            {attached.map((v) => (
+              <li key={v.id}>{v.title}</li>
+            ))}
+          </ul>
+        )}
+        <p className="text-sm text-ink-muted">
+          La familia ve cada video dentro de la evaluación solo si el video y la evaluación están
+          publicados.
+        </p>
       </Card>
 
       {canManage && (

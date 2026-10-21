@@ -16,6 +16,8 @@ import {
 } from "@/lib/goalkeeper-schemas";
 import { currentEvaluation, radarValues } from "@/lib/evolution";
 import { getFamilyEvolution, toEvolutionSeries } from "@/server/guardian/evaluations";
+import { listFamilyVideos } from "@/server/guardian/videos";
+import { VIDEO_TOPIC_LABELS } from "@/lib/video-schemas";
 import {
   getFamilyGoalkeeperProfile,
   listFamilyGoalkeepers,
@@ -57,16 +59,20 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
   // Un arquero ajeno o inexistente es indistinguible de uno que no existe (CA-12).
   const goalkeeper = goalkeepers.find((g) => g.id === arquero);
   if (!goalkeeper) notFound();
-  const [profile, evolution] = await Promise.all([
+  const [profile, evolution, videos] = await Promise.all([
     getFamilyGoalkeeperProfile(db, session, goalkeeper.id),
     getFamilyEvolution(db, session, goalkeeper.id),
+    listFamilyVideos(db, session, goalkeeper.id),
   ]);
+  const newCount = evolution.newCount + videos.newCount;
+  const latestVideo = videos.videos[0];
   if (!profile) notFound();
   const current = currentEvaluation(toEvolutionSeries(evolution.evaluations));
 
   const today = argentinaDate(new Date());
   const privacyHref = `/${session.schoolSlug}/familia/${goalkeeper.id}/privacidad`;
   const evolutionHref = `/${session.schoolSlug}/familia/${goalkeeper.id}/evolucion`;
+  const videosHref = `/${session.schoolSlug}/familia/${goalkeeper.id}/videos`;
 
   return (
     <PortalFrame slug={session.schoolSlug} goalkeepers={goalkeepers} currentId={goalkeeper.id}>
@@ -93,12 +99,10 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
         </Notice>
       )}
 
-      {evolution.newCount > 0 && (
+      {newCount > 0 && (
         <Notice tone="success">
           <p>
-            {evolution.newCount === 1
-              ? "Hay 1 novedad para ver."
-              : `Hay ${evolution.newCount} novedades para ver.`}{" "}
+            {newCount === 1 ? "Hay 1 novedad para ver." : `Hay ${newCount} novedades para ver.`}{" "}
             <Link href={`${evolutionHref}`} className="font-bold underline underline-offset-4">
               Ir a Evolución
             </Link>
@@ -131,6 +135,35 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
           <p className="text-ink-muted">
             Todavía no hay evaluaciones publicadas. Cuando los profesores publiquen la primera, la
             vas a ver acá.
+          </p>
+        )}
+      </Card>
+
+      <Card className="space-y-2">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-display text-lg font-bold">Último video</h2>
+          {latestVideo && (
+            <Link href={videosHref} className="text-sm font-semibold underline underline-offset-4">
+              Ver todos
+            </Link>
+          )}
+        </div>
+        {latestVideo ? (
+          <Link
+            href={`${videosHref}/${latestVideo.id}`}
+            className="block space-y-0.5 hover:text-accent"
+          >
+            <span className="block font-semibold">{latestVideo.title}</span>
+            <span className="block text-sm text-ink-muted">
+              {VIDEO_TOPIC_LABELS[latestVideo.topic]}
+              {latestVideo.isNew ? " · Nuevo" : ""}
+            </span>
+          </Link>
+        ) : (
+          <p className="text-ink-muted">
+            {videos.consent === "valid"
+              ? "Todavía no hay videos publicados."
+              : "Los videos se muestran cuando está vigente el consentimiento de imagen y video."}
           </p>
         )}
       </Card>

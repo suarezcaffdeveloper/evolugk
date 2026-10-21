@@ -7,6 +7,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { argentinaDate, formatCalendarDate } from "@/lib/dates";
 import { requireStaff } from "@/server/auth/guards";
 import { listPendingGoalkeepers } from "@/server/evaluations";
+import { getVideoQuota } from "@/server/videos";
 import { createServiceClient } from "@/server/supabase";
 import { logoutAction } from "../login/actions";
 
@@ -32,11 +33,12 @@ export default function PanelPage({ params }: PageProps<"/[slug]/panel">) {
 async function PanelContent({ params }: Pick<PageProps<"/[slug]/panel">, "params">) {
   const { slug } = await params;
   const session = await requireStaff(slug);
-  const pending = await listPendingGoalkeepers(
-    createServiceClient(),
-    session.school.id,
-    argentinaDate(new Date()),
-  );
+  const db = createServiceClient();
+  const [pending, quota] = await Promise.all([
+    listPendingGoalkeepers(db, session.school.id, argentinaDate(new Date())),
+    // El consumo de video lo ve la administración (spec 03, RF-31).
+    session.role === "school_admin" ? getVideoQuota(db, session.school.id) : Promise.resolve(null),
+  ]);
 
   return (
     <>
@@ -59,6 +61,40 @@ async function PanelContent({ params }: Pick<PageProps<"/[slug]/panel">, "params
           </p>
         </Card>
       </Link>
+
+      {quota && (
+        <Card className="rise-in space-y-2" style={{ "--i": 1 } as CSSProperties}>
+          <h2 className="font-display text-lg font-bold">Minutos de video</h2>
+          <p className="text-ink-muted">
+            {quota.usedMinutes} de {quota.limitMinutes} minutos usados ({quota.percent}%).
+          </p>
+          <div
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.min(100, quota.percent)}
+            aria-label="Minutos de video usados"
+            className="h-2 overflow-hidden rounded-full bg-line"
+          >
+            <div
+              className={`h-full rounded-full ${quota.level === "ok" ? "bg-accent" : "bg-warning"}`}
+              style={{ width: `${Math.min(100, quota.percent)}%` }}
+            />
+          </div>
+          {quota.level === "warning" && (
+            <p className="text-sm font-medium">
+              Estás cerca del tope. Al llegar al 100% no se podrán subir más videos: podés borrar
+              videos para liberar espacio o pedir un tope mayor.
+            </p>
+          )}
+          {quota.level === "blocked" && (
+            <p className="text-sm font-medium text-danger">
+              Alcanzaste el tope: no se pueden subir más videos. Borrá videos para liberar espacio o
+              pedí un tope mayor.
+            </p>
+          )}
+        </Card>
+      )}
 
       {pending.length > 0 && (
         <Card className="rise-in space-y-3" style={{ "--i": 1 } as CSSProperties}>

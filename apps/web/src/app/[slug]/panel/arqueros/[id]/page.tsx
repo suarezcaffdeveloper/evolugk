@@ -25,7 +25,9 @@ import {
 } from "@/server/evaluations";
 import { getGoalkeeperDetail, listGroups, searchGuardians } from "@/server/goalkeepers";
 import { createServiceClient } from "@/server/supabase";
+import { getVideoQuota, listVideos } from "@/server/videos";
 import { NoteForm } from "./evaluaciones/evaluation-actions";
+import { DeleteAllVideosButton } from "./videos/video-controls";
 import {
   AddGuardian,
   DeleteForm,
@@ -84,16 +86,19 @@ async function GoalkeeperContent({
   const today = argentinaDate(new Date());
 
   const viewer = { userId: session.user.id, role: session.role };
-  const [allGroups, found, evaluations, notes, rubric, lastPublished] = await Promise.all([
-    isAdmin ? listGroups(db, session.school.id) : Promise.resolve([]),
-    isAdmin && tutorQuery
-      ? searchGuardians(db, session.school.id, tutorQuery)
-      : Promise.resolve([]),
-    listEvaluations(db, session.school.id, id, viewer),
-    listNotes(db, session.school.id, id),
-    getCurrentRubric(db),
-    lastPublishedDates(db, session.school.id, [id]),
-  ]);
+  const [allGroups, found, evaluations, notes, rubric, lastPublished, videos, quota] =
+    await Promise.all([
+      isAdmin ? listGroups(db, session.school.id) : Promise.resolve([]),
+      isAdmin && tutorQuery
+        ? searchGuardians(db, session.school.id, tutorQuery)
+        : Promise.resolve([]),
+      listEvaluations(db, session.school.id, id, viewer),
+      listNotes(db, session.school.id, id),
+      getCurrentRubric(db),
+      lastPublishedDates(db, session.school.id, [id]),
+      listVideos(db, session.school.id, id),
+      getVideoQuota(db, session.school.id),
+    ]);
   const linkedIds = new Set(detail.guardians.map((g) => g.id));
   const matches = found
     .filter((g) => !linkedIds.has(g.id))
@@ -295,6 +300,53 @@ async function GoalkeeperContent({
               </li>
             ))}
           </ul>
+        )}
+      </Card>
+
+      <Card className="rise-in space-y-4" style={{ "--i": 1 } as CSSProperties}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-lg font-bold">Videos</h2>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`${base}/${id}/videos`}
+              className="inline-flex h-11 items-center rounded-control border border-line bg-surface px-4 font-semibold hover:bg-accent-soft"
+            >
+              Ver videos
+            </Link>
+            {isActive && detail.consent === "valid" && (
+              <Link
+                href={`${base}/${id}/videos/nuevo`}
+                className="inline-flex h-11 items-center rounded-control bg-accent px-4 font-semibold text-on-accent shadow-card hover:brightness-110"
+              >
+                Subir video
+              </Link>
+            )}
+          </div>
+        </div>
+        <p className="text-ink-muted">
+          {videos.length === 0
+            ? "Todavía no hay videos de este arquero."
+            : `${videos.length} ${videos.length === 1 ? "video" : "videos"}: ${videos.filter((v) => v.publicationStatus === "published").length} publicados.`}
+        </p>
+        {isAdmin && quota.level !== "ok" && (
+          <Notice tone="warning">
+            {quota.level === "blocked"
+              ? `La escuela alcanzó su tope de ${quota.limitMinutes} minutos de video: no se pueden subir más.`
+              : `La escuela usó el ${quota.percent}% de sus ${quota.limitMinutes} minutos de video.`}
+          </Notice>
+        )}
+        {isAdmin && detail.consent === "revoked" && videos.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm text-ink-muted">
+              Como la familia retiró el consentimiento, estos videos ya están ocultos para ella.
+              Podés dejarlos así o borrarlos definitivamente.
+            </p>
+            <DeleteAllVideosButton
+              slug={session.school.slug}
+              goalkeeperId={id}
+              count={videos.length}
+            />
+          </div>
         )}
       </Card>
 

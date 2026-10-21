@@ -9,6 +9,8 @@ import { formatCalendarDate } from "@/lib/dates";
 import { EVALUATION_TYPE_LABELS } from "@/lib/evaluation-schemas";
 import { getCurrentRubric } from "@/server/evaluations";
 import { getFamilyEvaluation, markSeen } from "@/server/guardian/evaluations";
+import { listFamilyEvaluationVideos } from "@/server/guardian/videos";
+import { VIDEO_TOPIC_LABELS } from "@/lib/video-schemas";
 import { listFamilyGoalkeepers } from "@/server/guardian/portal";
 import { requireFamily } from "@/server/guardian/session";
 import { createServiceClient } from "@/server/supabase";
@@ -53,7 +55,11 @@ async function FamilyEvaluationContent({ params }: Pick<Props, "params">) {
   await markSeen(db, session, goalkeeper.id, "evaluation", [evaluation.id]);
 
   // Siempre las 8 categorías: las que no se evaluaron se ven como tales (RF-17).
-  const { categories } = await getCurrentRubric(db);
+  const [{ categories }, supportVideos] = await Promise.all([
+    getCurrentRubric(db),
+    // Solo videos publicados de una evaluación publicada y con consentimiento vigente (RF-21).
+    listFamilyEvaluationVideos(db, session, goalkeeper.id, evaluation.id),
+  ]);
   const byKey = new Map(evaluation.scores.map((s) => [s.key, s]));
   const rows = categories.map((c) => ({
     key: c.key,
@@ -86,6 +92,25 @@ async function FamilyEvaluationContent({ params }: Pick<Props, "params">) {
         <h2 className="font-display text-lg font-bold">Puntajes</h2>
         <ScoreList rows={rows} />
       </Card>
+
+      {supportVideos.length > 0 && (
+        <Card className="space-y-3">
+          <h2 className="font-display text-lg font-bold">Videos de esta evaluación</h2>
+          <ul className="divide-y divide-line">
+            {supportVideos.map((video) => (
+              <li key={video.id}>
+                <Link
+                  href={`/${session.schoolSlug}/familia/${goalkeeper.id}/videos/${video.id}`}
+                  className="flex min-h-11 flex-wrap items-center justify-between gap-2 py-2 hover:text-accent"
+                >
+                  <span className="font-semibold">{video.title}</span>
+                  <span className="text-sm text-ink-muted">{VIDEO_TOPIC_LABELS[video.topic]}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {evaluation.comment && (
         <Card className="space-y-1">
