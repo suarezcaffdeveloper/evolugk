@@ -37,19 +37,39 @@ async function PanelContent({ params }: Pick<PageProps<"/[slug]/panel">, "params
         <h1 className="font-display text-3xl font-bold leading-tight">Hola, {session.firstName}</h1>
       </div>
 
-      <Card className="rise-in space-y-2" style={{ "--i": 1 } as CSSProperties}>
-        <h2 className="font-display text-lg font-bold">Estás dentro de {session.school.name}</h2>
-        <p className="text-ink-muted">
-          Desde acá vas a cargar arqueros, evaluaciones, videos y asistencia. Estas secciones llegan
-          en las próximas versiones.
-        </p>
-      </Card>
+      <Link
+        href={`/${session.school.slug}/panel/arqueros`}
+        className="rise-in block rounded-card focus-visible:outline-offset-4"
+        style={{ "--i": 1 } as CSSProperties}
+      >
+        <Card interactive className="space-y-1">
+          <h2 className="font-display text-lg font-bold">Arqueros</h2>
+          <p className="text-ink-muted">
+            {session.role === "school_admin"
+              ? "Altas, fichas, tutores y accesos de las familias."
+              : "Mirá las fichas y registrá altura y peso."}
+          </p>
+        </Card>
+      </Link>
+
+      {session.role === "school_admin" && (
+        <Link
+          href={`/${session.school.slug}/panel/grupos`}
+          className="rise-in block rounded-card focus-visible:outline-offset-4"
+          style={{ "--i": 2 } as CSSProperties}
+        >
+          <Card interactive className="space-y-1">
+            <h2 className="font-display text-lg font-bold">Grupos</h2>
+            <p className="text-ink-muted">Organizá a los arqueros por edad, nivel u horario.</p>
+          </Card>
+        </Link>
+      )}
 
       {session.role === "school_admin" && (
         <Link
           href={`/${session.school.slug}/panel/equipo`}
           className="rise-in block rounded-card focus-visible:outline-offset-4"
-          style={{ "--i": 2 } as CSSProperties}
+          style={{ "--i": 3 } as CSSProperties}
         >
           <Card interactive className="space-y-1">
             <h2 className="font-display text-lg font-bold">Equipo</h2>
@@ -63,7 +83,7 @@ async function PanelContent({ params }: Pick<PageProps<"/[slug]/panel">, "params
       <form
         action={logoutAction.bind(null, session.school.slug)}
         className="rise-in"
-        style={{ "--i": 2 } as CSSProperties}
+        style={{ "--i": 4 } as CSSProperties}
       >
         <SubmitButton variant="secondary" pendingText="Saliendo…">
           Cerrar sesión

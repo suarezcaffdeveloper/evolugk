@@ -33,3 +33,15 @@ export function getEmailConfig(env: NodeJS.ProcessEnv = process.env): {
     from: env.EMAIL_FROM?.trim() || DEFAULT_EMAIL_FROM,
   };
 }
+
+/**
+ * Secreto que firma los tokens de las sesiones de familia (se guarda su HMAC, no el token).
+ * Mínimo 32 caracteres. Sin él las sesiones de familia no pueden crearse ni validarse.
+ */
+export function getGuardianSessionSecret(env: NodeJS.ProcessEnv = process.env): string {
+  const value = env.GUARDIAN_SESSION_SECRET?.trim();
+  if (!value || value.length < 32) {
+    throw new Error("Falta la variable de entorno GUARDIAN_SESSION_SECRET (mínimo 32 caracteres).");
+  }
+  return value;
+}

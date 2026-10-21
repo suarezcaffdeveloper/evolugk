@@ -1,6 +1,7 @@
 import "server-only";
 import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { createUserClient } from "@/lib/supabase/user-client";
 import { isValidSlug, normalizeSlug } from "@/lib/slug";
 import { createServiceClient } from "../supabase";
@@ -25,6 +26,8 @@ export async function getStaffSession(rawSlug: string): Promise<StaffSession | n
   const slug = normalizeSlug(rawSlug);
   if (!isValidSlug(slug)) return null;
 
+  // La validación de la sesión de Supabase usa la hora: se marca el pedido como dinámico antes.
+  await connection();
   const supabase = await createUserClient();
   const { data } = await supabase.auth.getUser();
   if (!data.user) return null;
@@ -70,6 +73,7 @@ export type OperatorSession = {
 
 /** Sesión de operador (con mail y contraseña correctos), o null. El segundo paso se indica en `mfa`. */
 export async function getOperatorSession(): Promise<OperatorSession | null> {
+  await connection();
   const supabase = await createUserClient();
   const { data } = await supabase.auth.getUser();
   if (!data.user) return null;

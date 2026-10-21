@@ -16,7 +16,9 @@
     "format": "prettier --write .",
     "db": "node scripts/supabase-cli.mjs",
     "test:db": "pnpm --filter web test:db",
-    "operator:create": "pnpm --filter web operator:create"
+    "operator:create": "pnpm --filter web operator:create",
+    "test:e2e": "pnpm --filter web test:e2e",
+    "seed": "pnpm --filter web seed"
   },
   "devDependencies": {
     "prettier": "^3.9.10",
