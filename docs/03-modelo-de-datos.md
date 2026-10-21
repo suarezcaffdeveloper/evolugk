@@ -43,10 +43,12 @@ Este documento refleja las specs [00](../specs/00-auth-y-tenancy.md) a [06](../s
   - Categorías: atajada, juego aéreo, juego con los pies, posicionamiento, reflejos, comunicación, físico/coordinación, mentalidad.
 - `evaluation` (id, school_id, goalkeeper_id, autor_id, rubric_version_id, fecha, tipo: `ingreso | periodica`, comentario, estado: `borrador | publicada`, publicada_en)
   - A lo sumo una evaluación `ingreso` por arquero. Fecha no futura.
+  - `notified_at`: se completa al mandar el mail de publicación; republicar no vuelve a avisar. Solo se evalúa a arqueros activos (disparador en la base). Un puntaje omitido simplemente no tiene fila.
 - `evaluation_score` (evaluation_id, category_id, puntaje 1–10 opcional, comentario opcional, school_id)
 - `evaluation_revision` (id, school_id, evaluation_id, editado_por, editado_en, detalle)
 - `evaluation_video` (evaluation_id, video_id, school_id)
 - `note` (id, school_id, goalkeeper_id, autor_id, texto, visible_familia, creada_en)
+- `guardian_seen` (guardian_id, goalkeeper_id, school_id, tipo: `evaluation | note | video`, ref_id, visto_en) — indicador "nuevo" del portal; solo servidor.
 
 ### Videos
 - `video` (id, school_id, goalkeeper_id, autor_id, proveedor, proveedor_asset_id, titulo, tema, duracion_seg, estado_proceso: `subiendo | procesando | listo | error`, estado_publicacion: `borrador | publicado`, subido_en, publicado_en)

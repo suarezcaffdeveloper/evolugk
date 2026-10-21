@@ -1,6 +1,7 @@
 /**
  * Datos de ejemplo para probar a mano: una escuela completa con administración, profesor, grupos,
- * arqueros de todos los estados, hermanos, un arquero adulto, consentimientos de todo tipo y medidas.
+ * arqueros de todos los estados, hermanos, un arquero adulto, consentimientos de todo tipo, medidas,
+ * evaluaciones (publicadas, borrador y pendientes) y notas.
  *
  * Uso (desde la raíz del repositorio):  pnpm seed
  *
@@ -19,6 +20,13 @@ import { it } from "vitest";
 import { argentinaDate, addDays } from "../src/lib/dates";
 import { formatAccessCode } from "../src/lib/access-code";
 import { goalkeeperSchema, type GuardianInput } from "../src/lib/goalkeeper-schemas";
+import { makeEvaluationSchema } from "../src/lib/evaluation-schemas";
+import {
+  addNote,
+  createEvaluation,
+  getCurrentRubric,
+  publishEvaluation,
+} from "../src/server/evaluations";
 import { addMeasurement, createGoalkeeper, createGroup } from "../src/server/goalkeepers";
 import type { GuardianSpec } from "../src/server/goalkeepers";
 import { createAdminClient, createProfile, getConfig } from "../src/test/db";
@@ -316,6 +324,7 @@ it("carga los datos de ejemplo", async () => {
 
   // ── Arqueros, tutores, consentimientos y medidas ──
   const guardianByName = new Map<string, string>();
+  const goalkeeperIds = new Map<string, string>();
   const credentials: { tutor: string; arqueros: string[]; code: string; pin: string }[] = [];
   const consentTargets: { goalkeeperId: string; guardianId: string; kind: "valid" | "revoked" }[] =
     [];
@@ -381,6 +390,7 @@ it("carga los datos de ejemplo", async () => {
       entry?.arqueros.push(name);
     }
 
+    goalkeeperIds.set(name, created.goalkeeperId);
     if (seed.status && seed.status !== "active") {
       await db.from("goalkeeper").update({ status: seed.status }).eq("id", created.goalkeeperId);
     }
@@ -413,6 +423,119 @@ it("carga los datos de ejemplo", async () => {
     });
   }
 
+  // ── Evaluaciones y notas (hito 3) ──
+  const { categories } = await getCurrentRubric(db);
+  const evaluationSchema = makeEvaluationSchema(today);
+  const coach = { schoolId: school.id, actorId: staff[1].id, role: "coach" as const };
+  const brand = { name: "Escuela de Arqueros Demo", slug: SLUG };
+
+  /** Puntajes en el orden de la rúbrica; 0 = categoría omitida ("sin evaluar"). */
+  const evaluate = async (
+    who: string,
+    daysAgo: number,
+    type: "entry" | "periodic",
+    scores: number[],
+    comment: string,
+    publish = true,
+  ) => {
+    const goalkeeperId = goalkeeperIds.get(who);
+    if (!goalkeeperId) throw new Error(`No hay un arquero ${who} para evaluar`);
+    const result = await createEvaluation(db, {
+      ...coach,
+      goalkeeperId,
+      data: evaluationSchema.parse({
+        date: addDays(today, -daysAgo),
+        type,
+        comment,
+        scores: categories.map((c, i) => ({
+          categoryId: c.id,
+          score: scores[i] ? String(scores[i]) : "",
+        })),
+      }),
+    });
+    if (!result.ok) throw new Error(`No se pudo evaluar a ${who}: ${result.error}`);
+    if (publish) {
+      await publishEvaluation(db, {
+        ...coach,
+        evaluationId: result.evaluationId,
+        // Sin envío real: el seed no manda mails.
+        transport: async () => ({ ok: true, id: null }),
+        school: brand,
+      });
+    }
+  };
+
+  // Lucas: ingreso y dos periódicas (la última omite una categoría) + un borrador.
+  await evaluate(
+    "Lucas Fernández",
+    200,
+    "entry",
+    [3, 2, 4, 3, 4, 5, 4, 5],
+    "Punto de partida. Mucho por trabajar en el juego aéreo.",
+  );
+  await evaluate(
+    "Lucas Fernández",
+    110,
+    "periodic",
+    [5, 4, 5, 5, 6, 6, 5, 6],
+    "Mejoró el posicionamiento.",
+  );
+  await evaluate(
+    "Lucas Fernández",
+    20,
+    "periodic",
+    [7, 5, 6, 7, 8, 7, 6, 0],
+    "Gran momento. Todavía no pudimos evaluar la mentalidad en partido.",
+  );
+  await evaluate(
+    "Lucas Fernández",
+    2,
+    "periodic",
+    [7, 6, 6, 7, 8, 7, 7, 7],
+    "Borrador sin publicar.",
+    false,
+  );
+  // Valentina: la última evaluación tiene más de 90 días (queda "pendiente").
+  await evaluate(
+    "Valentina Suárez",
+    190,
+    "entry",
+    [5, 4, 3, 5, 6, 6, 5, 6],
+    "Buena técnica de base.",
+  );
+  await evaluate(
+    "Valentina Suárez",
+    120,
+    "periodic",
+    [6, 5, 5, 6, 7, 6, 6, 7],
+    "Avanza con los pies.",
+  );
+  // Tomás: una sola evaluación publicada (sin gráficos de evolución todavía).
+  await evaluate(
+    "Tomás Acosta",
+    15,
+    "entry",
+    [8, 7, 7, 8, 8, 9, 8, 8],
+    "Nivel muy alto desde el ingreso.",
+  );
+  // Camila: evaluada hace poco, con consentimiento retirado (las evaluaciones no dependen de él).
+  await evaluate("Camila Rojas", 30, "entry", [7, 8, 8, 7, 8, 7, 8, 9], "Gran lectura del juego.");
+  // Sin evaluar nunca (pendientes): Joaquín, Sofía, Bruno, Martina, Santiago, Federico, Olivia.
+
+  const lucas = goalkeeperIds.get("Lucas Fernández");
+  if (lucas) {
+    await addNote(db, {
+      ...coach,
+      goalkeeperId: lucas,
+      data: { body: "Muy buen trabajo hoy en los centros.", visibleToFamily: true },
+    });
+    await addNote(db, {
+      ...coach,
+      goalkeeperId: lucas,
+      data: { body: "Llegó con dolor en la rodilla (nota interna).", visibleToFamily: false },
+    });
+  }
+
   // ── Resultado ──
   const lines = [
     "DATOS DE EJEMPLO — Escuela de Arqueros Demo",
@@ -427,6 +550,9 @@ it("carga los datos de ejemplo", async () => {
     ...credentials.map(
       (c) => `  ${c.tutor.padEnd(22)} ${c.code}   PIN ${c.pin}   → ${c.arqueros.join(", ")}`,
     ),
+    "",
+    "Evaluaciones: Lucas (ingreso + 2 periódicas + un borrador + notas), Valentina (pendiente: más de 90",
+    "días), Tomás (una sola evaluación) y Camila (ingreso). El resto nunca fue evaluado.",
     "",
     "Casos para mirar: hermanos con un solo tutor (Fernández, Ibarra), arquero adulto que es su propio",
     "tutor (Paz), consentimiento pendiente (Benítez, Medina, Domínguez), retirado (Rojas), arquero",

@@ -4,7 +4,8 @@ import { defineConfig, devices } from "@playwright/test";
 // Las claves de .env.local sirven para preparar datos en la base de desarrollo desde las pruebas.
 if (existsSync(".env.local")) process.loadEnvFile(".env.local");
 
-const PORT = 3000;
+// E2E_PORT permite correr los e2e de otra rama en paralelo, sin reusar el servidor de otra carpeta.
+const PORT = Number(process.env.E2E_PORT ?? 3000);
 
 /**
  * Pruebas end-to-end (`pnpm test:e2e`). Corren contra el proyecto de desarrollo de Supabase:
@@ -31,7 +32,7 @@ export default defineConfig({
     channel: "chrome",
   },
   webServer: {
-    command: "pnpm dev",
+    command: `pnpm exec next dev -p ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: true,
     timeout: 120_000,

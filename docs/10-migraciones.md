@@ -80,3 +80,6 @@ pnpm operator:create
 ## Pendientes a confirmar
 - Que la verificación en dos pasos (TOTP) esté disponible en el plan del proyecto de Supabase (la configuración local indica que podría requerir plan Pro).
 - Crear el proyecto de producción antes del lanzamiento.
+
+## Pruebas end-to-end en paralelo
+`pnpm test:e2e` reutiliza el servidor que ya esté en el puerto 3000. Para correr los e2e de otra rama o carpeta sin reutilizar ese servidor, definí `E2E_PORT` (por ejemplo `E2E_PORT=3100 pnpm test:e2e`): Playwright levanta su propio servidor en ese puerto.
