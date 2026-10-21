@@ -14,7 +14,10 @@ Refleja las specs [00](../specs/00-auth-y-tenancy.md) a [06](../specs/06-pagos-y
 ## Multi-tenancy
 - Una BDD, `school_id` en todas las tablas de negocio.
 - El `school_id` y el rol viajan como claims de la sesión. Las políticas RLS los leen.
-- Ruta por escuela `/{slug}`; resolución del tenant en middleware. El slug es único, de 3 a 30 caracteres, fijo tras el alta y con palabras reservadas.
+- Ruta por escuela `/{slug}`. El slug es único, de 3 a 30 caracteres, fijo tras el alta y con palabras reservadas (la lista está en `src/lib/slug.ts` y en la base, y una prueba verifica que coincidan).
+- **Resolución del tenant:** se hace en el layout `app/[slug]/layout.tsx`, no en el proxy (el antiguo middleware): consulta `get_school_branding` con la clave secreta y cachea el resultado con `use cache` (etiqueta `school-branding:{slug}`, vida de 60 s como respaldo). Al suspender, reactivar o editar la marca de una escuela, el panel del operador invalida la etiqueta con `updateTag` y el cambio es inmediato.
+- Slug inválido, inexistente o de una escuela suspendida: misma pantalla neutra. Por el streaming de `cacheComponents` responde con estado 200 y `noindex`, no con 404; es indistinguible a propósito (spec 00, RF-02). El 404 real queda para rutas que no existen.
+- **El login y las acciones de servidor no usan esta caché:** deben verificar en vivo que la escuela esté activa (la caché solo sirve para mostrar la marca).
 - Una escuela suspendida no muestra datos a nadie; conserva todo 90 días.
 - Marca (logo y un color principal) como variables CSS por escuela, con validación de contraste en modo claro y oscuro.
 

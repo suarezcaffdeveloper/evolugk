@@ -244,15 +244,13 @@ describe("los clientes no pueden escribir", () => {
         "admin crea una invitación",
         adminA,
         () =>
-          adminA
-            .from("invitation")
-            .insert({
-              school_id: schoolA.id,
-              email: "x@example.com",
-              role: "coach",
-              token_hash: randomUUID(),
-              expires_at: new Date().toISOString(),
-            }),
+          adminA.from("invitation").insert({
+            school_id: schoolA.id,
+            email: "x@example.com",
+            role: "coach",
+            token_hash: randomUUID(),
+            expires_at: new Date().toISOString(),
+          }),
       ],
       [
         "profesor escribe auditoría",
@@ -397,13 +395,11 @@ describe("reglas de la base de datos", () => {
   });
 
   it("exige que suspended_at coincida con el estado", async () => {
-    const { error } = await admin
-      .from("school")
-      .insert({
-        ...baseSchool,
-        slug: `test-iso-susp-${randomUUID().slice(0, 6)}`,
-        status: "suspended",
-      });
+    const { error } = await admin.from("school").insert({
+      ...baseSchool,
+      slug: `test-iso-susp-${randomUUID().slice(0, 6)}`,
+      status: "suspended",
+    });
     expect(error?.code).toBe(CHECK_VIOLATION);
   });
 

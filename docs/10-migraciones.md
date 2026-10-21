@@ -41,6 +41,20 @@ Comandos habituales:
 - **Convención de políticas:** una sola política por tabla y acción, con las funciones de identidad envueltas en `(select ...)` para que se evalúen una vez por consulta. Lo controla el chequeo de rendimiento de Supabase.
 - `get_school_branding(slug)` (marca para el login) solo la puede ejecutar el servidor; no está expuesta a internet.
 
+## Primer operador de la plataforma
+La cuenta del operador (rol `platform_admin`, sin escuela) se crea con un script interactivo que corrés vos en tu propia terminal, desde la raíz del repositorio:
+
+```
+pnpm operator:create
+```
+
+- Pide mail, nombre, apellido y contraseña (mínimo 12 caracteres; no se muestra al escribirla) y la repite para confirmarla.
+- Muestra el proyecto de Supabase donde va a escribir y pide confirmación (`SI`) antes de crear nada.
+- Usa la clave secreta de `apps/web/.env.local`. Se niega a correr si no es una terminal real, para que la contraseña nunca pase por un chat.
+- Si falla el alta del perfil, deshace la cuenta para no dejar un usuario huérfano.
+- Para producción: poner temporalmente en `.env.local` la URL y clave del proyecto de producción, correrlo y restaurar los valores de desarrollo.
+- Al ingresar por primera vez al panel del operador se activa la verificación en dos pasos.
+
 ## Pruebas de base de datos
 - `pnpm test:db` corre las pruebas de aislamiento y de reglas contra el proyecto de **desarrollo**. `pnpm test` corre solo las unitarias (no necesitan red ni claves).
 - Se niegan a correr si `NEXT_PUBLIC_SUPABASE_URL` no es el proyecto de desarrollo. Crean escuelas y usuarios con prefijo `test-iso-` / `isolation-test-` y los borran al terminar; si una corrida se corta, la siguiente limpia los restos.
