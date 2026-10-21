@@ -170,6 +170,52 @@ export async function setSchoolSuspended(
   return { ok: true, slug: data[0].slug };
 }
 
+export type VideoLimitResult =
+  { ok: true } | { ok: false; error: "invalid" | "not_found" | "failed" };
+
+/** Tope máximo razonable de minutos de video: evita cargar un valor con un cero de más sin querer. */
+export const MAX_VIDEO_MINUTES_LIMIT = 100_000;
+
+/**
+ * El operador cambia el tope de minutos de video de una escuela (spec 07, RF-04). Se aplica de
+ * inmediato: si la escuela estaba bloqueada al 100%, las subidas se destraban. El historial de
+ * condiciones completo llega con el hito de suscripciones; por ahora queda en la auditoría.
+ */
+export async function setVideoMinutesLimit(
+  admin: SupabaseClient,
+  input: { schoolId: string; minutes: number; actorId: string },
+): Promise<VideoLimitResult> {
+  if (
+    !Number.isInteger(input.minutes) ||
+    input.minutes < 0 ||
+    input.minutes > MAX_VIDEO_MINUTES_LIMIT
+  ) {
+    return { ok: false, error: "invalid" };
+  }
+  const { data: current } = await admin
+    .from("subscription")
+    .select("video_minutes_limit")
+    .eq("school_id", input.schoolId)
+    .maybeSingle();
+  if (!current) return { ok: false, error: "not_found" };
+
+  const { error } = await admin
+    .from("subscription")
+    .update({ video_minutes_limit: input.minutes })
+    .eq("school_id", input.schoolId);
+  if (error) return { ok: false, error: "failed" };
+
+  await admin.from("audit_log").insert({
+    school_id: input.schoolId,
+    actor_id: input.actorId,
+    action: "subscription.video_limit_changed",
+    entity: "subscription",
+    entity_id: input.schoolId,
+    details: { from: current.video_minutes_limit, to: input.minutes },
+  });
+  return { ok: true };
+}
+
 export type SchoolSummary = {
   id: string;
   name: string;

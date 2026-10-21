@@ -28,6 +28,7 @@ import {
   type GuardianSpec,
 } from "@/server/goalkeepers";
 import { loginGuardian } from "@/server/guardian/access";
+import { FakeVideoProvider } from "./fake-video-provider";
 import {
   cleanup,
   createAdminClient,
@@ -583,7 +584,13 @@ describe("eliminación definitiva", () => {
       today: TODAY,
     });
 
-    expect(await deleteGoalkeeper(admin, { ...actor, goalkeeperId: first.goalkeeperId })).toEqual({
+    expect(
+      await deleteGoalkeeper(admin, {
+        ...actor,
+        goalkeeperId: first.goalkeeperId,
+        videoProvider: new FakeVideoProvider(),
+      }),
+    ).toEqual({
       ok: true,
     });
     expect(await getGoalkeeperDetail(admin, school.id, first.goalkeeperId)).toBeNull();
@@ -608,13 +615,23 @@ describe("eliminación definitiva", () => {
 
   it("borra al tutor que se queda sin arqueros y no actúa sobre otra escuela", async () => {
     const { goalkeeperId, credentials } = await create({ name: "Solo" });
-    expect(await deleteGoalkeeper(admin, { ...otherActor, goalkeeperId })).toEqual({
+    expect(
+      await deleteGoalkeeper(admin, {
+        ...otherActor,
+        goalkeeperId,
+        videoProvider: new FakeVideoProvider(),
+      }),
+    ).toEqual({
       ok: false,
       error: "not_found",
     });
     expect(await getGoalkeeperDetail(admin, school.id, goalkeeperId)).not.toBeNull();
 
-    await deleteGoalkeeper(admin, { ...actor, goalkeeperId });
+    await deleteGoalkeeper(admin, {
+      ...actor,
+      goalkeeperId,
+      videoProvider: new FakeVideoProvider(),
+    });
     const { data } = await admin.from("guardian").select("id").eq("id", credentials[0].guardianId);
     expect(data).toEqual([]);
   });

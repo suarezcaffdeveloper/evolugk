@@ -197,3 +197,47 @@ export function evaluationPublishedEmail(input: {
     ].join("\n"),
   };
 }
+
+export function videosPublishedEmail(input: {
+  to: string;
+  schoolName: string;
+  goalkeeperName: string;
+  /** Títulos de los videos publicados en la ventana (se agrupan en un solo mail). */
+  titles: string[];
+  link: string;
+  accentColor?: string | null;
+}): EmailMessage {
+  const many = input.titles.length > 1;
+  const name = escapeHtml(input.goalkeeperName);
+  const list = input.titles.map((title) => `<li>${escapeHtml(title)}</li>`).join("");
+  const heading = many
+    ? `Hay ${input.titles.length} videos nuevos de ${input.goalkeeperName}`
+    : `Hay un video nuevo de ${input.goalkeeperName}`;
+  return {
+    to: input.to,
+    subject: `${heading} en ${input.schoolName}`,
+    html: renderLayout({
+      schoolName: input.schoolName,
+      accentColor: input.accentColor,
+      heading,
+      paragraphs: [
+        `Los profesores de ${escapeHtml(input.schoolName)} publicaron ${many ? "videos" : "un video"} de <strong>${name}</strong>:`,
+        `<ul style="margin:0;padding-left:20px;">${list}</ul>`,
+        "Entrá al portal para verlos y leer los comentarios de los profesores.",
+      ],
+      buttonLabel: many ? "Ver los videos" : "Ver el video",
+      link: input.link,
+      footnote:
+        "Recibís este mail porque sos tutor o tutora de este arquero. Para entrar necesitás tu código de acceso y tu PIN.",
+    }),
+    text: [
+      `Los profesores de ${input.schoolName} publicaron ${many ? "videos" : "un video"} de ${input.goalkeeperName}:`,
+      ...input.titles.map((title) => `- ${title}`),
+      "",
+      "Entrá al portal para verlos y leer los comentarios de los profesores:",
+      input.link,
+      "",
+      "Recibís este mail porque sos tutor o tutora de este arquero. Para entrar necesitás tu código de acceso y tu PIN.",
+    ].join("\n"),
+  };
+}

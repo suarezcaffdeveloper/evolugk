@@ -30,6 +30,7 @@ import {
   type NewCredentials,
 } from "@/server/goalkeepers";
 import { createServiceClient } from "@/server/supabase";
+import { getVideoProvider } from "@/server/video";
 
 /**
  * Cada acción vuelve a verificar, en el servidor y en vivo, la sesión y el rol: la administración
@@ -304,6 +305,7 @@ export async function deleteGoalkeeperAction(
     schoolId: session.school.id,
     actorId: session.user.id,
     goalkeeperId,
+    videoProvider: getVideoProvider(),
   });
   if (!result.ok) return { error: ERRORS[result.error] };
   refresh(session.school.slug);

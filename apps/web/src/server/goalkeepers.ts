@@ -12,6 +12,8 @@ import {
   type Relationship,
 } from "@/lib/goalkeeper-schemas";
 import { issueInitialPin, revokeGuardianAccess, unlockGuardian } from "./guardian/access";
+import { deleteGoalkeeperVideos } from "./videos";
+import type { VideoProvider } from "./video/provider";
 
 /**
  * Arqueros, tutores, grupos y medidas (spec 01). Toda función recibe la escuela y filtra por ella:
@@ -431,11 +433,12 @@ export async function setGoalkeeperStatus(
  * tutores que quedan sin ningún arquero se borran con ella; los que tienen otros hijos no se
  * tocan (RN-06). La auditoría no conserva datos personales.
  *
- * Hito 4: acá también hay que borrar los videos del proveedor externo y reintentar si falla.
+ * También se borran los videos del proveedor externo (RN-07), con reintentos si el proveedor
+ * falla: por eso se necesita el proveedor y los videos se borran antes que la ficha.
  */
 export async function deleteGoalkeeper(
   db: Db,
-  input: Actor & { goalkeeperId: string },
+  input: Actor & { goalkeeperId: string; videoProvider: VideoProvider },
 ): Promise<UpdateResult> {
   const { data: links } = await db
     .from("goalkeeper_guardian")
@@ -443,6 +446,16 @@ export async function deleteGoalkeeper(
     .eq("school_id", input.schoolId)
     .eq("goalkeeper_id", input.goalkeeperId);
   const guardianIds = (links ?? []).map((l) => l.guardian_id as string);
+
+  // Primero los videos: al borrar la ficha se van en cascada y se perdería el rastro de los archivos.
+  const { data: owned } = await db
+    .from("goalkeeper")
+    .select("id")
+    .eq("id", input.goalkeeperId)
+    .eq("school_id", input.schoolId)
+    .maybeSingle();
+  if (!owned) return { ok: false, error: "not_found" };
+  await deleteGoalkeeperVideos(db, input.videoProvider, input);
 
   const { data, error } = await db
     .from("goalkeeper")
