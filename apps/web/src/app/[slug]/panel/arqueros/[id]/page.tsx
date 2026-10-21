@@ -26,6 +26,9 @@ import {
 import { getGoalkeeperDetail, listGroups, searchGuardians } from "@/server/goalkeepers";
 import { createServiceClient } from "@/server/supabase";
 import { getVideoQuota, listVideos } from "@/server/videos";
+import { AttendanceCalendar } from "@/components/attendance-calendar";
+import { attendanceSummary, ENTRY_LABELS, monthCalendar, parseMonth } from "@/lib/attendance";
+import { getGoalkeeperAttendance, toRecords } from "@/server/attendance";
 import { NoteForm } from "./evaluaciones/evaluation-actions";
 import { DeleteAllVideosButton } from "./videos/video-controls";
 import {
@@ -80,13 +83,13 @@ async function GoalkeeperContent({
   const detail = await getGoalkeeperDetail(db, session.school.id, id);
   if (!detail) notFound();
 
-  const { tq, evaluacion } = await searchParams;
+  const { tq, evaluacion, mes } = await searchParams;
   const tutorQuery = (Array.isArray(tq) ? tq[0] : tq)?.trim() ?? "";
   const isAdmin = session.role === "school_admin";
   const today = argentinaDate(new Date());
 
   const viewer = { userId: session.user.id, role: session.role };
-  const [allGroups, found, evaluations, notes, rubric, lastPublished, videos, quota] =
+  const [allGroups, found, evaluations, notes, rubric, lastPublished, videos, quota, attendance] =
     await Promise.all([
       isAdmin ? listGroups(db, session.school.id) : Promise.resolve([]),
       isAdmin && tutorQuery
@@ -98,6 +101,7 @@ async function GoalkeeperContent({
       lastPublishedDates(db, session.school.id, [id]),
       listVideos(db, session.school.id, id),
       getVideoQuota(db, session.school.id),
+      getGoalkeeperAttendance(db, session.school.id, id),
     ]);
   const linkedIds = new Set(detail.guardians.map((g) => g.id));
   const matches = found
@@ -116,6 +120,11 @@ async function GoalkeeperContent({
     revoked: { label: "Consentimiento retirado", tone: "danger" as const },
   }[detail.consent];
   const base = `/${session.school.slug}/panel/arqueros`;
+  const attendanceStats = attendanceSummary(toRecords(attendance), today);
+  const attendanceMonth = parseMonth(typeof mes === "string" ? mes : undefined) ?? {
+    year: Number(today.slice(0, 4)),
+    month: Number(today.slice(5, 7)),
+  };
 
   // Evolución: solo con lo publicado (los borradores no entran en el radar, RN-03).
   const published = evaluations
@@ -347,6 +356,75 @@ async function GoalkeeperContent({
               count={videos.length}
             />
           </div>
+        )}
+      </Card>
+
+      <Card className="rise-in space-y-4" style={{ "--i": 1 } as CSSProperties}>
+        <h2 className="font-display text-lg font-bold">Asistencia</h2>
+        {attendance.length === 0 ? (
+          <p className="text-ink-muted">Todavía no hay asistencia registrada.</p>
+        ) : (
+          <>
+            <p className="text-ink-muted">
+              {attendanceStats.percent === null ? (
+                "Sin datos en los últimos 90 días."
+              ) : (
+                <>
+                  <strong className="font-display text-2xl text-ink">
+                    {attendanceStats.percent}%
+                  </strong>{" "}
+                  en los últimos 90 días ({attendanceStats.present} presentes de{" "}
+                  {attendanceStats.counted}; no cuentan las justificadas, las sesiones suspendidas
+                  ni lo que quedó sin marcar).
+                </>
+              )}
+            </p>
+            <AttendanceCalendar
+              year={attendanceMonth.year}
+              month={attendanceMonth.month}
+              weeks={monthCalendar(
+                attendanceMonth.year,
+                attendanceMonth.month,
+                toRecords(attendance),
+              )}
+              hrefForMonth={(value) => `${base}/${id}?mes=${value}`}
+            />
+            <ul className="divide-y divide-line">
+              {attendance.slice(0, 8).map((row) => (
+                <li
+                  key={row.entryId}
+                  className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
+                >
+                  <span>
+                    <span className="font-semibold">{formatCalendarDate(row.date)}</span>
+                    <span className="text-ink-muted">
+                      {" "}
+                      · {row.groupName}
+                      {row.isGuest ? " (invitado)" : ""}
+                    </span>
+                    {row.reason && (
+                      <span className="block text-ink-muted">Motivo: {row.reason}</span>
+                    )}
+                  </span>
+                  <Chip
+                    tone={
+                      row.sessionStatus === "suspended"
+                        ? "neutral"
+                        : row.status === "present"
+                          ? "success"
+                          : row.status === "absent"
+                            ? "danger"
+                            : row.status === "excused"
+                              ? "warning"
+                              : "neutral"
+                    }
+                  >
+                    {row.sessionStatus === "suspended" ? "Suspendida" : ENTRY_LABELS[row.status]}
+                  </Chip>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </Card>
 

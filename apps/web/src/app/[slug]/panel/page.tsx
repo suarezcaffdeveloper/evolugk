@@ -7,7 +7,9 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { argentinaDate, formatCalendarDate } from "@/lib/dates";
 import { requireStaff } from "@/server/auth/guards";
 import { listPendingGoalkeepers } from "@/server/evaluations";
+import { listAbsenceAlerts } from "@/server/attendance";
 import { getVideoQuota } from "@/server/videos";
+import { DismissAlertButton } from "./asistencia/alert-controls";
 import { createServiceClient } from "@/server/supabase";
 import { logoutAction } from "../login/actions";
 
@@ -34,10 +36,14 @@ async function PanelContent({ params }: Pick<PageProps<"/[slug]/panel">, "params
   const { slug } = await params;
   const session = await requireStaff(slug);
   const db = createServiceClient();
-  const [pending, quota] = await Promise.all([
+  const [pending, quota, alerts] = await Promise.all([
     listPendingGoalkeepers(db, session.school.id, argentinaDate(new Date())),
     // El consumo de video lo ve la administración (spec 03, RF-31).
     session.role === "school_admin" ? getVideoQuota(db, session.school.id) : Promise.resolve(null),
+    // Los avisos de ausencias seguidas son del admin (spec 05, RF-24).
+    session.role === "school_admin"
+      ? listAbsenceAlerts(db, session.school.id)
+      : Promise.resolve([]),
   ]);
 
   return (
@@ -61,6 +67,46 @@ async function PanelContent({ params }: Pick<PageProps<"/[slug]/panel">, "params
           </p>
         </Card>
       </Link>
+
+      <a
+        href={`/${session.school.slug}/panel/asistencia`}
+        className="rise-in block rounded-card focus-visible:outline-offset-4"
+        style={{ "--i": 1 } as CSSProperties}
+      >
+        <Card interactive className="space-y-1">
+          <h2 className="font-display text-lg font-bold">Asistencia</h2>
+          <p className="text-ink-muted">
+            Tomá lista en la cancha, también sin conexión, y mirá los informes.
+          </p>
+        </Card>
+      </a>
+
+      {alerts.length > 0 && (
+        <Card
+          className="rise-in space-y-3 border-warning/50 bg-warning/10"
+          style={{ "--i": 1 } as CSSProperties}
+        >
+          <h2 className="font-display text-lg font-bold">Ausencias seguidas</h2>
+          <ul className="divide-y divide-line">
+            {alerts.map((alert) => (
+              <li key={alert.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <Link
+                  href={`/${session.school.slug}/panel/arqueros/${alert.goalkeeperId}`}
+                  className="hover:text-accent"
+                >
+                  <span className="font-semibold">
+                    {alert.lastName}, {alert.firstName}
+                  </span>
+                  <span className="block text-sm text-ink-muted">
+                    {alert.streakLength} ausencias seguidas sin justificar
+                  </span>
+                </Link>
+                <DismissAlertButton slug={session.school.slug} alertId={alert.id} />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {quota && (
         <Card className="rise-in space-y-2" style={{ "--i": 1 } as CSSProperties}>

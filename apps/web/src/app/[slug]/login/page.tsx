@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { normalizeSlug } from "@/lib/slug";
 import { getStaffSession } from "@/server/auth/guards";
+import { ClearOfflineCache } from "@/components/offline-support";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ async function LoginContent({
 
   return (
     <Card className="rise-in space-y-5 p-6">
+      <ClearOfflineCache />
       <div className="space-y-1">
         <h1 className="font-display text-2xl font-bold">Ingreso del equipo</h1>
         <p className="text-sm text-ink-muted">Administradores y profesores.</p>

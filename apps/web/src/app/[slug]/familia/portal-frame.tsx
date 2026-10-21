@@ -27,6 +27,7 @@ export function PortalFrame({
         { href: `${base}/${currentId}`, label: "Inicio" },
         { href: `${base}/${currentId}/evolucion`, label: "Evolución" },
         { href: `${base}/${currentId}/videos`, label: "Videos" },
+        { href: `${base}/${currentId}/asistencia`, label: "Asistencia" },
         { href: `${base}/${currentId}/privacidad`, label: "Privacidad" },
         { href: `${base}/mis-datos`, label: "Mis datos" },
       ]

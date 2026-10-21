@@ -21,6 +21,7 @@ import { argentinaDate, addDays } from "../src/lib/dates";
 import { formatAccessCode } from "../src/lib/access-code";
 import { goalkeeperSchema, type GuardianInput } from "../src/lib/goalkeeper-schemas";
 import { makeEvaluationSchema } from "../src/lib/evaluation-schemas";
+import { applyMarks, openSession, type MarkInput } from "../src/server/attendance";
 import {
   addNote,
   createEvaluation,
@@ -536,6 +537,94 @@ it("carga los datos de ejemplo", async () => {
     });
   }
 
+  // ── Asistencia (hito 5) ──
+  const attendanceActor = { ...coach };
+  /** Toma lista de un grupo hace `daysAgo` días. `plan` indica el estado de cada arquero por nombre. */
+  const takeAttendance = async (
+    groupName: string,
+    daysAgo: number,
+    plan: Record<string, "present" | "absent" | "excused">,
+    suspendedReason?: string,
+  ) => {
+    const opened = await openSession(db, {
+      ...attendanceActor,
+      groupId: groupIds.get(groupName) ?? "",
+      date: addDays(today, -daysAgo),
+      today,
+    });
+    if (!opened.ok) throw new Error(`No se pudo abrir la lista de ${groupName}: ${opened.error}`);
+    const marks: MarkInput[] = [];
+    for (const entry of opened.state.entries) {
+      const status = plan[`${entry.firstName} ${entry.lastName}`];
+      if (status) {
+        marks.push({
+          goalkeeperId: entry.goalkeeperId,
+          status,
+          reason: status === "excused" ? "Tenía examen" : null,
+          markedAt: new Date(Date.now() - (daysAgo * 24 * 3600 - 60) * 1000).toISOString(),
+        });
+      }
+    }
+    if (suspendedReason) {
+      await db
+        .from("attendance_session")
+        .update({ status: "suspended", suspension_reason: suspendedReason })
+        .eq("id", opened.state.sessionId);
+      return;
+    }
+    const saved = await applyMarks(db, {
+      ...attendanceActor,
+      sessionId: opened.state.sessionId,
+      marks,
+      // Las marcas del seed son del pasado: se aplican con la hora de esa fecha.
+      now: new Date(),
+    });
+    if (!saved.ok) throw new Error(`No se pudo guardar la lista de ${groupName}: ${saved.error}`);
+  };
+
+  // Infantil: seis entrenamientos. Lucas asiste casi siempre; Sofía falla 3 seguidas al final (aviso
+  // para el admin); Bruno y Olivia tienen baja asistencia; Mateo tiene una justificada.
+  const infantil = (over: Record<string, "present" | "absent" | "excused">) => ({
+    "Lucas Fernández": "present" as const,
+    "Mateo Fernández": "present" as const,
+    "Sofía Medina": "present" as const,
+    "Bruno Gómez": "present" as const,
+    "Martina Ibarra": "present" as const,
+    "Olivia Domínguez": "present" as const,
+    ...over,
+  });
+  await takeAttendance("Infantil", 35, infantil({ "Bruno Gómez": "absent" }));
+  await takeAttendance(
+    "Infantil",
+    28,
+    infantil({ "Bruno Gómez": "absent", "Olivia Domínguez": "absent" }),
+  );
+  await takeAttendance(
+    "Infantil",
+    21,
+    infantil({ "Mateo Fernández": "excused", "Bruno Gómez": "absent" }),
+    undefined,
+  );
+  await takeAttendance("Infantil", 14, {}, "Lluvia");
+  await takeAttendance(
+    "Infantil",
+    9,
+    infantil({ "Sofía Medina": "absent", "Olivia Domínguez": "absent" }),
+  );
+  await takeAttendance("Infantil", 7, infantil({ "Sofía Medina": "absent" }));
+  await takeAttendance(
+    "Infantil",
+    2,
+    infantil({ "Sofía Medina": "absent", "Bruno Gómez": "absent" }),
+  );
+  // Juvenil: una lista parcial (algunos sin marcar).
+  await takeAttendance("Juvenil", 7, {
+    "Valentina Suárez": "present",
+    "Joaquín Benítez": "absent",
+    "Camila Rojas": "present",
+    "Tomás Acosta": "present",
+  });
+
   // ── Resultado ──
   const lines = [
     "DATOS DE EJEMPLO — Escuela de Arqueros Demo",
@@ -553,6 +642,10 @@ it("carga los datos de ejemplo", async () => {
     "",
     "Evaluaciones: Lucas (ingreso + 2 periódicas + un borrador + notas), Valentina (pendiente: más de 90",
     "días), Tomás (una sola evaluación) y Camila (ingreso). El resto nunca fue evaluado.",
+    "",
+    "Asistencia: Infantil con 6 entrenamientos y uno suspendido por lluvia; Sofía con 3 ausencias seguidas (aviso",
+    "para la administración), Bruno y Olivia con baja asistencia, Mateo con una justificada. Juvenil con una lista",
+    "parcial (algunos sin marcar).",
     "",
     "Casos para mirar: hermanos con un solo tutor (Fernández, Ibarra), arquero adulto que es su propio",
     "tutor (Paz), consentimiento pendiente (Benítez, Medina, Domínguez), retirado (Rojas), arquero",

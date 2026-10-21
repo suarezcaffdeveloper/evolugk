@@ -16,6 +16,7 @@ import {
 } from "@/lib/goalkeeper-schemas";
 import { currentEvaluation, radarValues } from "@/lib/evolution";
 import { getFamilyEvolution, toEvolutionSeries } from "@/server/guardian/evaluations";
+import { getFamilyAttendance } from "@/server/guardian/attendance";
 import { listFamilyVideos } from "@/server/guardian/videos";
 import { VIDEO_TOPIC_LABELS } from "@/lib/video-schemas";
 import {
@@ -59,17 +60,24 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
   // Un arquero ajeno o inexistente es indistinguible de uno que no existe (CA-12).
   const goalkeeper = goalkeepers.find((g) => g.id === arquero);
   if (!goalkeeper) notFound();
-  const [profile, evolution, videos] = await Promise.all([
+  const today = argentinaDate(new Date());
+  const [profile, evolution, videos, attendance] = await Promise.all([
     getFamilyGoalkeeperProfile(db, session, goalkeeper.id),
     getFamilyEvolution(db, session, goalkeeper.id),
     listFamilyVideos(db, session, goalkeeper.id),
+    getFamilyAttendance(
+      db,
+      session,
+      goalkeeper.id,
+      { year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) },
+      today,
+    ),
   ]);
   const newCount = evolution.newCount + videos.newCount;
   const latestVideo = videos.videos[0];
   if (!profile) notFound();
   const current = currentEvaluation(toEvolutionSeries(evolution.evaluations));
 
-  const today = argentinaDate(new Date());
   const privacyHref = `/${session.schoolSlug}/familia/${goalkeeper.id}/privacidad`;
   const evolutionHref = `/${session.schoolSlug}/familia/${goalkeeper.id}/evolucion`;
   const videosHref = `/${session.schoolSlug}/familia/${goalkeeper.id}/videos`;
@@ -167,6 +175,30 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
           </p>
         )}
       </Card>
+
+      {attendance.available && (
+        <Card className="space-y-1">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-lg font-bold">Asistencia</h2>
+            <Link
+              href={`/${session.schoolSlug}/familia/${goalkeeper.id}/asistencia`}
+              className="text-sm font-semibold underline underline-offset-4"
+            >
+              Ver calendario
+            </Link>
+          </div>
+          {attendance.summary.percent === null ? (
+            <p className="text-ink-muted">Todavía no hay datos para calcular el porcentaje.</p>
+          ) : (
+            <p className="text-ink-muted">
+              <strong className="font-display text-2xl text-ink">
+                {attendance.summary.percent}%
+              </strong>{" "}
+              en los últimos 90 días.
+            </p>
+          )}
+        </Card>
+      )}
 
       <Card className="space-y-4">
         <h2 className="font-display text-lg font-bold">Ficha</h2>

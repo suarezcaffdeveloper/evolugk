@@ -32,9 +32,13 @@ export default defineConfig({
     channel: "chrome",
   },
   webServer: {
-    command: `pnpm exec next dev -p ${PORT}`,
+    // E2E_PROD=1 prueba la aplicación compilada: el service worker del modo sin conexión solo se
+    // activa en producción.
+    command: process.env.E2E_PROD
+      ? `pnpm exec next build && pnpm exec next start -p ${PORT}`
+      : `pnpm exec next dev -p ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: true,
-    timeout: 120_000,
+    timeout: process.env.E2E_PROD ? 420_000 : 120_000,
   },
 });
