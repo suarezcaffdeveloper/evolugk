@@ -851,6 +851,8 @@ export type GoalkeeperDetail = {
     firstLoginCompleted: boolean;
     accessRevoked: boolean;
     lockedUntil: string | null;
+    /** Bloqueado por intentos fallidos en este momento. */
+    locked: boolean;
   }[];
   measurements: { id: string; date: string; heightCm: number | null; weightKg: number | null }[];
 };
@@ -940,6 +942,7 @@ export async function getGoalkeeperDetail(
           firstLoginCompleted: gd.first_login_completed as boolean,
           accessRevoked: gd.access_revoked as boolean,
           lockedUntil: gd.locked_until as string | null,
+          locked: gd.locked_until !== null && new Date(gd.locked_until as string) > new Date(),
         },
       ];
     }),
