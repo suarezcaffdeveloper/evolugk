@@ -69,6 +69,12 @@ pnpm operator:create
 - Verificación en dos pasos (TOTP) habilitada, para el operador.
 - La duración de sesión de 30 días del staff se controla desde la aplicación; los temporizadores de sesión de Supabase pueden requerir un plan pago.
 
+## Estado de la configuración en la nube
+- Para ver qué difiere entre `supabase/config.toml` y el proyecto: `pnpm db config diff`. Para aplicarlo: `pnpm db config push` (pide confirmación por cada recurso).
+- **No aplicar `config push` sin revisar el diff**: el archivo debe coincidir con la nube en todo lo que no se quiere cambiar (pool de conexiones, OTP, confirmación de mails), porque `push` escribe todo lo que el archivo declara.
+- Cambios de autenticación pendientes de aplicar al proyecto de desarrollo: sin registro libre (`enable_signup = false`, hoy está abierto), contraseña mínima de 8 (hoy 6) y URL de redirección `http://localhost:3000`.
+- Pendiente en el panel de Supabase (no es de `config.toml`): proteger contra contraseñas filtradas (HaveIBeenPwned; el aviso de seguridad lo marca y puede requerir plan Pro) y reemplazar la "Site URL" (hoy `localhost`) por la dirección real antes del lanzamiento.
+
 ## Pendientes a confirmar
 - Que la verificación en dos pasos (TOTP) esté disponible en el plan del proyecto de Supabase (la configuración local indica que podría requerir plan Pro).
 - Crear el proyecto de producción antes del lanzamiento.

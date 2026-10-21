@@ -26,6 +26,10 @@ Refleja las specs [00](../specs/00-auth-y-tenancy.md) a [06](../specs/06-pagos-y
 - **Staff (admin, profesor):** Supabase Auth con email y contraseña (mínimo 8 caracteres), sesión de 30 días, recuperación por mail. Alta por invitación por mail (vence a los 7 días, token de un solo uso). Una cuenta pertenece a una sola escuela.
 - **Familia:** flujo propio. Código de acceso por tutor + PIN de 6 dígitos (link mágico fuera del MVP). Emite una sesión (token firmado) con `guardian_id` y `school_id`, de 30 días, revocable y válida en varios dispositivos. PIN hasheado; 5 intentos fallidos bloquean 15 minutos; se rechazan PIN repetidos o en secuencia. Primer ingreso: cambio de PIN obligatorio y consentimiento.
 - Detalle en [specs/00-auth-y-tenancy.md](../specs/00-auth-y-tenancy.md).
+- **Sesión (staff y operador):** cookies de Supabase gestionadas con `@supabase/ssr`, **httpOnly** y de 30 días que se renuevan con el uso: el `proxy` (`src/proxy.ts`) valida y renueva el token en cada pedido. Toda la autenticación ocurre en el servidor (acciones de servidor); el navegador no lee la sesión.
+- **Ingreso del staff** (`/{slug}/login`): todas las fallas (contraseña, mail inexistente, cuenta de otra escuela, desactivada, escuela suspendida) devuelven el mismo mensaje y no dejan sesión. La escuela se consulta en vivo, sin la caché de la marca.
+- **Operador** (`/operator/login`): después de la contraseña exige verificación en dos pasos (TOTP). Sin el segundo paso (nivel aal2) la base de datos no lo reconoce como operador (`app.is_platform_admin()` exige aal2), aunque conozca la contraseña. La inscripción de la app de autenticación se crea solo cuando la persona toca el botón (no al renderizar, porque cada render crearía y descartaría inscripciones).
+- **Guardas** (`src/server/auth/guards.ts`): las páginas protegidas verifican en vivo persona, perfil activo y escuela; sin sesión redirigen al ingreso sin mostrar contenido privado. Por el streaming de `cacheComponents`, la redirección viaja en el HTML con estado 200.
 
 ## Videos
 1. El profesor graba o elige un clip en el celular (máximo 3 minutos, hasta 1080p).

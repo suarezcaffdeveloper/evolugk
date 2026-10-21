@@ -5,7 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { OperatorInputError, createOperator } from "../server/operator";
-import { createAdminClient, createAnonClient, purgeLeftovers, signIn } from "./db";
+import { createAdminClient, createAnonClient, elevateToAal2, purgeLeftovers, signIn } from "./db";
 
 const admin = createAdminClient();
 const createdUserIds: string[] = [];
@@ -62,7 +62,7 @@ describe("createOperator", () => {
     expect(log).toEqual([{ action: "operator.created", entity: "profile", school_id: null }]);
   });
 
-  it("la cuenta creada puede iniciar sesión y ve todas las escuelas", async () => {
+  it("la cuenta creada inicia sesión, pero solo ve las escuelas después del segundo paso", async () => {
     const email = newEmail("login");
     const password = newPassword();
     const { userId } = await createOperator(admin, {
@@ -83,8 +83,14 @@ describe("createOperator", () => {
       .select("id")
       .single();
     try {
-      const { data: schools } = await client.from("school").select("id").eq("id", school.data!.id);
-      expect(schools).toEqual([{ id: school.data!.id }]);
+      // Con solo la contraseña (aal1) no ve ninguna escuela.
+      const before = await client.from("school").select("id").eq("id", school.data!.id);
+      expect(before.data).toEqual([]);
+
+      // Con el segundo paso verificado (aal2), sí.
+      await elevateToAal2(client);
+      const after = await client.from("school").select("id").eq("id", school.data!.id);
+      expect(after.data).toEqual([{ id: school.data!.id }]);
     } finally {
       await admin.from("school").delete().eq("id", school.data!.id);
     }

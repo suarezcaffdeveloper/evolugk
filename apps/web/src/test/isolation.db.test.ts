@@ -15,6 +15,7 @@ import {
   createUser,
   purgeLeftovers,
   signIn,
+  signInWithMfa,
   type TestSchool,
   type TestUser,
 } from "./db";
@@ -35,7 +36,8 @@ let adminA: SupabaseClient;
 let coachA: SupabaseClient;
 let adminB: SupabaseClient;
 let adminC: SupabaseClient;
-let operator: SupabaseClient;
+let operator: SupabaseClient; // con verificación en dos pasos (aal2)
+let operatorAal1: SupabaseClient; // solo con contraseña
 let noProfile: SupabaseClient;
 
 let coachA2User: TestUser;
@@ -113,9 +115,11 @@ beforeAll(async () => {
     signIn(coachA2User),
     signIn(adminBUser),
     signIn(adminCUser),
-    signIn(operatorUser),
+    signInWithMfa(operatorUser),
     signIn(orphanUser),
   ]);
+  // Sesión nueva con solo la contraseña (después de inscribir el segundo paso): nivel aal1.
+  operatorAal1 = await signIn(operatorUser);
 });
 
 afterAll(async () => {
@@ -193,6 +197,23 @@ describe("permisos por rol (CA-02: el profesor no ve lo administrativo)", () => 
       expect(error).toBeNull();
       expect(data).toEqual([]);
     }
+  });
+
+  it("el operador con solo la contraseña (sin segundo paso) no ve nada, salvo su propio perfil", async () => {
+    for (const table of ["school", "subscription", "invitation", "audit_log"] as const) {
+      const { data, error } = await operatorAal1.from(table).select("*");
+      expect(error).toBeNull();
+      expect(data, table).toEqual([]);
+    }
+    const profiles = await ids(operatorAal1, "profile", "user_id");
+    expect(profiles).toHaveLength(1); // solo el suyo: la aplicación lo usa para pedirle el segundo paso
+    const { data: aal } = await operatorAal1.auth.mfa.getAuthenticatorAssuranceLevel();
+    expect(aal).toMatchObject({ currentLevel: "aal1", nextLevel: "aal2" });
+  });
+
+  it("el operador con verificación en dos pasos está en aal2", async () => {
+    const { data: aal } = await operator.auth.mfa.getAuthenticatorAssuranceLevel();
+    expect(aal?.currentLevel).toBe("aal2");
   });
 
   it("el operador ve todas las escuelas, perfiles y suscripciones", async () => {

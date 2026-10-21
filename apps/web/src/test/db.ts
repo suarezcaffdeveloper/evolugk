@@ -6,6 +6,7 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
+import { totpCode } from "./totp";
 
 const DEV_PROJECT_REF = "udticdfguwfckqrrzdfb";
 const SLUG_PREFIX = "test-iso-";
@@ -135,6 +136,34 @@ export async function signIn(user: TestUser): Promise<SupabaseClient> {
     password: user.password,
   });
   if (error) throw new Error(`No se pudo iniciar sesión como ${user.email}: ${error.message}`);
+  return client;
+}
+
+/**
+ * Sube la sesión del cliente a verificación en dos pasos (nivel aal2): inscribe una app de
+ * autenticación simulada y verifica un código. Devuelve el secreto, para poder repetir el paso.
+ */
+export async function elevateToAal2(
+  client: SupabaseClient,
+): Promise<{ secret: string; factorId: string }> {
+  const { data, error } = await client.auth.mfa.enroll({
+    factorType: "totp",
+    friendlyName: `prueba-${unique()}`,
+  });
+  if (error || !data) throw new Error(`No se pudo inscribir el segundo paso: ${error?.message}`);
+  const verified = await client.auth.mfa.challengeAndVerify({
+    factorId: data.id,
+    code: totpCode(data.totp.secret),
+  });
+  if (verified.error)
+    throw new Error(`No se pudo verificar el segundo paso: ${verified.error.message}`);
+  return { secret: data.totp.secret, factorId: data.id };
+}
+
+/** Inicia sesión y completa la verificación en dos pasos (equivale a un operador ya verificado). */
+export async function signInWithMfa(user: TestUser): Promise<SupabaseClient> {
+  const client = await signIn(user);
+  await elevateToAal2(client);
   return client;
 }
 
