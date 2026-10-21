@@ -71,8 +71,10 @@ pnpm operator:create
 
 ## Estado de la configuración en la nube
 - Para ver qué difiere entre `supabase/config.toml` y el proyecto: `pnpm db config diff`. Para aplicarlo: `pnpm db config push` (pide confirmación por cada recurso).
+- Los cambios de configuración tardan unos segundos en aplicarse en Supabase: después de un `config push`, esperar ~20 segundos antes de verificar.
 - **No aplicar `config push` sin revisar el diff**: el archivo debe coincidir con la nube en todo lo que no se quiere cambiar (pool de conexiones, OTP, confirmación de mails), porque `push` escribe todo lo que el archivo declara.
-- Cambios de autenticación pendientes de aplicar al proyecto de desarrollo: sin registro libre (`enable_signup = false`, hoy está abierto), contraseña mínima de 8 (hoy 6) y URL de redirección `http://localhost:3000`.
+- Ya aplicados al proyecto de desarrollo: sin registro libre (`[auth] enable_signup = false`), contraseña mínima de 8 y URL de redirección `http://localhost:3000`. Una prueba (`auth-config.db.test.ts`) verifica que sigan así.
+- **Cuidado:** `[auth.email] enable_signup` NO es "cerrar los registros": es el interruptor del proveedor de mail completo. En `false` nadie puede ingresar con mail y contraseña. Debe quedar en `true`; los registros se cierran solo con `[auth] enable_signup = false`.
 - Pendiente en el panel de Supabase (no es de `config.toml`): proteger contra contraseñas filtradas (HaveIBeenPwned; el aviso de seguridad lo marca y puede requerir plan Pro) y reemplazar la "Site URL" (hoy `localhost`) por la dirección real antes del lanzamiento.
 
 ## Pendientes a confirmar
