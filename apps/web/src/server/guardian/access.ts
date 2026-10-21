@@ -131,6 +131,7 @@ export type GuardianSession = {
   sessionId: string;
   guardianId: string;
   schoolId: string;
+  schoolSlug: string;
   firstName: string;
   lastName: string;
   pinChanged: boolean;
@@ -152,7 +153,7 @@ export async function getGuardianSession(
   const { data } = await client
     .from("guardian_session")
     .select(
-      "id, guardian_id, school_id, expires_at, revoked, guardian(first_name, last_name, pin_changed, first_login_completed, access_revoked), school:school_id(status)",
+      "id, guardian_id, school_id, expires_at, revoked, guardian(first_name, last_name, pin_changed, first_login_completed, access_revoked), school:school_id(status, slug)",
     )
     .eq("token_hash", hashSessionToken(token))
     .maybeSingle();
@@ -165,13 +166,14 @@ export async function getGuardianSession(
     first_login_completed: boolean;
     access_revoked: boolean;
   } | null;
-  const school = data.school as unknown as { status: string } | null;
+  const school = data.school as unknown as { status: string; slug: string } | null;
   if (!guardian || guardian.access_revoked || school?.status !== "active") return null;
 
   return {
     sessionId: data.id,
     guardianId: data.guardian_id,
     schoolId: data.school_id,
+    schoolSlug: school.slug,
     firstName: guardian.first_name,
     lastName: guardian.last_name,
     pinChanged: guardian.pin_changed,
@@ -193,7 +195,9 @@ export async function revokeAllSessions(client: SupabaseClient, guardianId: stri
     .eq("revoked", false);
 }
 
-export type PinChangeResult = { ok: true } | { ok: false; message: string };
+/** `field` indica qué campo del formulario corresponde al error, cuando hay uno claro. */
+export type PinChangeResult =
+  { ok: true } | { ok: false; message: string; field?: "currentPin" | "newPin" };
 
 /**
  * El propio tutor cambia su PIN (spec 00, RF-16; spec 04, RF-06 y RF-29). Pide el PIN actual
@@ -204,9 +208,13 @@ export async function changeGuardianPin(
   input: { guardianId: string; keepSessionId: string; currentPin: string; newPin: string },
 ): Promise<PinChangeResult> {
   const check = checkPin(input.newPin);
-  if (!check.ok) return check;
+  if (!check.ok) return { ...check, field: "newPin" };
   if (input.newPin === input.currentPin) {
-    return { ok: false, message: "El PIN nuevo tiene que ser distinto del actual." };
+    return {
+      ok: false,
+      message: "El PIN nuevo tiene que ser distinto del actual.",
+      field: "newPin",
+    };
   }
 
   const { data: guardian } = await client
@@ -223,7 +231,7 @@ export async function changeGuardianPin(
       p_max_attempts: MAX_PIN_ATTEMPTS,
       p_lock_minutes: LOCK_MINUTES,
     });
-    return { ok: false, message: "El PIN actual no es correcto." };
+    return { ok: false, message: "El PIN actual no es correcto.", field: "currentPin" };
   }
 
   const { error } = await client
