@@ -37,6 +37,16 @@ Comandos habituales:
 - Las funciones de identidad devuelven `school_id` y rol; las políticas las usan y nunca confían en datos que envíe el cliente.
 - Se requiere una prueba de aislamiento automática por cada tabla con `school_id` (ver [plan de construcción](08-plan-de-construccion.md)).
 - El rol de servicio (`service_role` / clave secreta) solo se usa desde el servidor.
+- Los clientes (`authenticated`) tienen **solo lectura**. Toda escritura pasa por el servidor con la clave secreta, después de verificar permisos en el código.
+- **Convención de políticas:** una sola política por tabla y acción, con las funciones de identidad envueltas en `(select ...)` para que se evalúen una vez por consulta. Lo controla el chequeo de rendimiento de Supabase.
+- `get_school_branding(slug)` (marca para el login) solo la puede ejecutar el servidor; no está expuesta a internet.
+
+## Pruebas de base de datos
+- `pnpm test:db` corre las pruebas de aislamiento y de reglas contra el proyecto de **desarrollo**. `pnpm test` corre solo las unitarias (no necesitan red ni claves).
+- Se niegan a correr si `NEXT_PUBLIC_SUPABASE_URL` no es el proyecto de desarrollo. Crean escuelas y usuarios con prefijo `test-iso-` / `isolation-test-` y los borran al terminar; si una corrida se corta, la siguiente limpia los restos.
+- Toda tabla nueva con `school_id` agrega sus pruebas de aislamiento en `apps/web/src/test/`.
+- Revisión automática de Supabase: `pnpm db db advisors --linked --type security` y `--type performance`. Deben dar "No issues found".
+- Para verificar que las pruebas detectan fugas se puede romper una política a propósito con `pnpm db db query --linked "<sql>"`, comprobar que fallan y restaurarla.
 
 ## Configuración de autenticación
 `supabase/config.toml` documenta las decisiones de las specs. Para el proyecto en la nube hay que reflejarlas en el panel o con `pnpm db config push`:
