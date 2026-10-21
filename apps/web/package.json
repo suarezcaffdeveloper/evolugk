@@ -11,7 +11,9 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run --exclude \"**/*.db.test.ts\"",
     "test:db": "vitest run .db.test",
-    "operator:create": "node --env-file=.env.local scripts/create-operator.ts"
+    "operator:create": "node --env-file=.env.local scripts/create-operator.ts",
+    "test:e2e": "playwright test",
+    "seed": "vitest run --config vitest.seed.config.mts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -25,6 +27,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

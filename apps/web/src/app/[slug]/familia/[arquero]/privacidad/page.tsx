@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { LegalLinks } from "@/components/legal-document";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { CONSENT_PARAGRAPHS, CONSENT_TITLE } from "@/lib/consent-text";
@@ -69,6 +70,16 @@ async function Privacy({
           firstName={goalkeeper.firstName}
           status={goalkeeper.consent}
         />
+      </Card>
+
+      <Card className="space-y-2">
+        <h2 className="font-display text-lg font-bold">Documentos</h2>
+        <p className="text-ink-muted">
+          Cómo cuidamos los datos de {goalkeeper.firstName} y las reglas para usar el portal.
+        </p>
+        <p>
+          <LegalLinks />
+        </p>
       </Card>
     </PortalFrame>
   );
