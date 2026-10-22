@@ -25,11 +25,22 @@
 2. **`server-only`** en todos los módulos de `src/server` que faltaba, salvo `operator.ts` y `operator-cli.ts` (los usa `create-operator.ts` con Node plano). Si alguien los importa desde un componente de cliente, el build falla.
 3. **Cabeceras** en todas las rutas (`next.config.ts`): HSTS, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` y `Permissions-Policy`. Verificadas sobre el build.
 
+## Borrado definitivo de una escuela (spec 00, RN-09)
+Manual, irreversible y solo para el operador, en `/operator/escuelas/{slug}` (sección "Estado de la escuela").
+
+- **Condiciones:** la escuela está suspendida y pasaron **90 días** desde la suspensión (el día 90 ya se puede; se cuenta en fecha de Argentina), y el operador escribió el identificador de la escuela. Antes de la fecha, la pantalla solo informa desde cuándo se podrá.
+- **Qué se borra:** todos los datos de la escuela (arqueros, tutores, evaluaciones, asistencia, cuotas, avisos, suscripción), los archivos de video en el proveedor y las cuentas de Auth de su equipo. La cuenta del operador nunca se toca.
+- **Qué se conserva:** los **pagos que la escuela le hizo a la plataforma** (`subscription_payment` perdió la clave foránea a la escuela) para que el resumen de ingresos no cambie, y el registro de auditoría con el resumen del borrado (`school.deleted`: nombre, identificador y cantidades).
+- **Orden y tolerancia a fallas** (`server/school-deletion.ts`, función SQL `delete_school_permanently`):
+  1. **Una sola transacción** en la base pasa los identificadores de los videos a `video_provider_cleanup` y borra la escuela. O pasan las dos cosas o ninguna: nunca se borran archivos de una escuela que sigue viva, ni se pierden los identificadores.
+  2. Después se borran las cuentas de Auth y se intenta limpiar el proveedor. Lo que el proveedor no confirme queda en la cola y lo reintenta la tarea diaria; el operador ve cuántos quedaron pendientes.
+- **Permisos:** la función SQL solo la ejecuta `service_role`; la acción exige operador con verificación en dos pasos.
+- **Pruebas:** `src/test/school-deletion.db.test.ts` (condiciones y borde de los 90 días, confirmación, qué se borra y qué se conserva, proveedor caído, subida sin terminar, aislamiento entre escuelas, atomicidad y permisos).
+
 ## Pendiente
 | # | Tema | Gravedad | Detalle |
 |---|---|---|---|
 | 1 | Política de contenido (CSP) | Media | Falta. Hay que armar la lista de orígenes (Mux, Supabase, fuentes) y probarla en navegador en modo solo-reporte antes de imponerla |
-| 2 | Borrado definitivo de una escuela | Media | La spec 00 (RN-09) lo deja manual tras 90 días, pero no hay herramienta. Borrar la fila deja huérfanos los videos en Mux y las cuentas de Auth. Hace falta un procedimiento (o comando del operador) que los limpie primero |
-| 3 | `invitation.token_hash` legible por el staff | Baja | Es SHA-256 de 256 bits aleatorios: no se puede revertir. Aun así no hace falta exponerlo; se puede quitar de los privilegios de columna |
-| 4 | Funciones trigger con `EXECUTE` a PUBLIC | Baja | Son de tipo invoker y `anon` no tiene acceso al esquema `app`; se pueden revocar por prolijidad |
-| 5 | Límite de intentos del login del staff | A revisar | Confirmar la configuración de Auth en el proyecto de producción |
+| 2 | `invitation.token_hash` legible por el staff | Baja | Es SHA-256 de 256 bits aleatorios: no se puede revertir. Aun así no hace falta exponerlo; se puede quitar de los privilegios de columna |
+| 3 | Funciones trigger con `EXECUTE` a PUBLIC | Baja | Son de tipo invoker y `anon` no tiene acceso al esquema `app`; se pueden revocar por prolijidad |
+| 4 | Límite de intentos del login del staff | A revisar | Confirmar la configuración de Auth en el proyecto de producción |

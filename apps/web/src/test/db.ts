@@ -167,7 +167,7 @@ export async function signInWithMfa(user: TestUser): Promise<SupabaseClient> {
   return client;
 }
 
-/** Borra las escuelas (con sus perfiles, invitaciones y suscripción) y luego los usuarios. */
+/** Borra las escuelas (con sus perfiles, invitaciones y suscripción), sus pagos y luego los usuarios. */
 export async function cleanup(
   admin: SupabaseClient,
   created: { schoolIds: string[]; userIds: string[] },
@@ -175,6 +175,9 @@ export async function cleanup(
   if (created.schoolIds.length) {
     await admin.from("audit_log").delete().in("school_id", created.schoolIds);
     await admin.from("school").delete().in("id", created.schoolIds);
+    // Estas tablas no cuelgan de la escuela (sobreviven a su borrado a propósito): se limpian aparte.
+    await admin.from("subscription_payment").delete().in("school_id", created.schoolIds);
+    await admin.from("video_provider_cleanup").delete().in("school_id", created.schoolIds);
   }
   for (const id of created.userIds) {
     await admin.auth.admin.deleteUser(id);

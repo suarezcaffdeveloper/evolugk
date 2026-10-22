@@ -22,6 +22,8 @@ import {
   VoidPaymentButton,
 } from "./subscription-forms";
 import { VideoLimitForm } from "./video-limit-form";
+import { deletionEligibleOn } from "@/server/school-deletion";
+import { DeleteSchoolControl } from "./delete-school-control";
 import { SuspendControl } from "./suspend-control";
 
 export const metadata: Metadata = { title: "Escuela · EvoluGK", robots: { index: false } };
@@ -323,6 +325,17 @@ async function SchoolDetail({ params }: Pick<PageProps<"/operator/escuelas/[slug
           schoolName={school.name}
           suspended={school.status === "suspended"}
         />
+        {school.status === "suspended" && school.suspendedAt && (
+          <DeleteSchoolControl
+            schoolId={school.id}
+            schoolName={school.name}
+            slug={school.slug}
+            eligibleOn={formatCalendarDate(deletionEligibleOn(school.suspendedAt.toISOString()))}
+            eligibleNow={
+              deletionEligibleOn(school.suspendedAt.toISOString()) <= argentinaDate(new Date())
+            }
+          />
+        )}
       </Card>
 
       <Link

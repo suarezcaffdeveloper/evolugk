@@ -1,13 +1,14 @@
 import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg";
 
 const variants: Record<Variant, string> = {
   primary: "bg-accent text-on-accent shadow-card hover:shadow-card-hover hover:brightness-110",
   secondary: "bg-surface text-ink border border-line hover:bg-accent-soft",
   ghost: "text-ink hover:bg-accent-soft",
+  danger: "bg-danger text-white shadow-card hover:brightness-110",
 };
 
 // Áreas táctiles de al menos 44 px (md y lg), como pide el brief para el profesor.

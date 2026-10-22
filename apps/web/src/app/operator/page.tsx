@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense, type CSSProperties } from "react";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { Notice } from "@/components/ui/notice";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { formatCalendarDate } from "@/lib/dates";
 import { requireOperator } from "@/server/auth/guards";
@@ -11,26 +12,33 @@ import { DismissAlertButton } from "./escuelas/[slug]/subscription-forms";
 import { createServiceClient } from "@/server/supabase";
 import { operatorLogoutAction } from "./actions";
 
-export default function OperatorHomePage() {
+type OperatorSearchParams = PageProps<"/operator">["searchParams"];
+
+export default function OperatorHomePage({ searchParams }: PageProps<"/operator">) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 pb-16 pt-4">
       <Suspense
         fallback={<div className="h-40 animate-pulse rounded-card bg-line" aria-busy="true" />}
       >
-        <OperatorHome />
+        <OperatorHome searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function OperatorHome() {
+async function OperatorHome({ searchParams }: { searchParams: OperatorSearchParams }) {
   // Al panel solo se entra con la verificación en dos pasos completa.
   const session = await requireOperator("ready");
   const db = createServiceClient();
-  const [schools, alerts] = await Promise.all([listSchools(db), listOpenAlerts(db)]);
+  const [schools, alerts, deleted] = await Promise.all([
+    listSchools(db),
+    listOpenAlerts(db),
+    deletedSchoolNotice(searchParams),
+  ]);
 
   return (
     <>
+      {deleted && <Notice tone={deleted.warning ? "warning" : "success"}>{deleted.text}</Notice>}
       <div className="rise-in flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
           <p className="text-sm font-semibold text-ink-muted">Operador de la plataforma</p>
@@ -131,4 +139,26 @@ function SchoolCard({ school }: { school: SchoolSummary }) {
       </Card>
     </Link>
   );
+}
+
+/** Resultado de un borrado definitivo, que llega en la dirección tras redirigir desde el detalle. */
+async function deletedSchoolNotice(searchParams: OperatorSearchParams) {
+  const params = await searchParams;
+  const slug = typeof params.borrada === "string" ? params.borrada : null;
+  if (!slug) return null;
+
+  const pending = Number(params.pendientes) || 0;
+  const accounts = Number(params.cuentas) || 0;
+  const notes = [
+    pending > 0
+      ? `${pending} archivo${pending === 1 ? "" : "s"} de video quedó pendiente de borrarse en el proveedor: se reintenta solo cada día.`
+      : null,
+    accounts > 0
+      ? `${accounts} cuenta${accounts === 1 ? "" : "s"} del equipo no se pudo borrar; ya no tiene acceso a ninguna escuela.`
+      : null,
+  ].filter(Boolean);
+  return {
+    warning: notes.length > 0,
+    text: [`La escuela «${slug}» se borró definitivamente.`, ...notes].join(" "),
+  };
 }

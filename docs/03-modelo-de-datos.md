@@ -12,7 +12,7 @@ Este documento refleja las specs [00](../specs/00-auth-y-tenancy.md) a [07](../s
   - `suspendida_en` marca el inicio de los 90 días de conservación de datos.
 - `subscription` (id, school_id único, precio_mensual_ars, tope_arqueros, tope_minutos_video, prueba_hasta, cubierto_hasta, suspendida_manual) — condiciones a medida por escuela, sin catálogo de planes (spec 07).
   - El estado `prueba | al_dia | vencida | suspendida` se **calcula por fechas** (gracia de 10 días tras `cubierto_hasta`); solo se guarda la suspensión manual.
-- `subscription_payment` (id, school_id, fecha_pago, monto_ars, meses_cubiertos, nota, registrado_por, cubierto_antes, cubierto_despues, anulado) — cada pago suma sus meses a `cubierto_hasta`.
+- `subscription_payment` (id, school_id, fecha_pago, monto_ars, meses_cubiertos, nota, registrado_por, cubierto_antes, cubierto_despues, anulado) — cada pago suma sus meses a `cubierto_hasta`. **Sin clave foránea a la escuela a propósito:** los pagos sobreviven al borrado definitivo de la escuela (ver [15 — Seguridad](15-seguridad.md)).
 - `subscription_change` (id, school_id, campo, valor_anterior, valor_nuevo, nota, hecho_por, hecho_en) — historial de condiciones.
 - `platform_alert` (id, tipo, school_id, creada_en, resuelta_en, descartada, avisada_en) — alertas del operador: pruebas por terminar o sin cerrar, vencimientos, gracia terminada, topes de arqueros (90% / superado) y de video (80% / 100%).
   - Solo el operador accede a `subscription*` y `platform_alert`.
