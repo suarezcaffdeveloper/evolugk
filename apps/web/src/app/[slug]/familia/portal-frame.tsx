@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { InstallPrompt } from "@/components/install-prompt";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/cn";
 import type { FamilyGoalkeeper } from "@/server/guardian/portal";
@@ -66,6 +67,9 @@ export function PortalFrame({
       )}
 
       <PortalNav items={items} />
+
+      {/* Se sugiere instalar la app una vez adentro del portal (spec 04, RF-40). */}
+      <InstallPrompt />
 
       {children}
 

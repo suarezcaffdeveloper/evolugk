@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense, type CSSProperties, type ReactNode } from "react";
 import { LegalLinks } from "@/components/legal-document";
@@ -8,6 +9,24 @@ import { getSchoolBranding } from "@/server/tenant";
 
 /** Color del producto, para escuelas que todavía no eligieron el suyo. */
 const DEFAULT_ACCENT = "#C2410C";
+
+/**
+ * App instalable de la escuela (spec 04, RF-40): enlaza su manifest y el ícono de iOS, y le da a
+ * la app el nombre de la escuela. Una escuela que no existe no aporta nada: la pantalla neutra la
+ * resuelve el layout.
+ */
+export async function generateMetadata({ params }: LayoutProps<"/[slug]">): Promise<Metadata> {
+  const { slug } = await params;
+  const school = await getSchoolBranding(slug);
+  if (!school) return {};
+  const base = `/${slug.toLowerCase()}`;
+  return {
+    manifest: `${base}/manifest.webmanifest`,
+    applicationName: school.name,
+    icons: { apple: `${base}/icono/180.png` },
+    appleWebApp: { capable: true, title: school.name, statusBarStyle: "default" },
+  };
+}
 
 /**
  * Marco de cada escuela bajo /{slug}: resuelve el slug, aplica su marca (logo y color, con
@@ -45,6 +64,9 @@ async function TenantShell({
 
   return (
     <div className="school-brand flex min-h-screen flex-col" style={brandStyle}>
+      {/* Color de la barra del navegador y del sistema. No puede ir en generateViewport: con la
+          caché de componentes esa función no admite datos de la escuela. React lo sube al <head>. */}
+      <meta name="theme-color" content={accent.light.accent} />
       <header className="flex items-center justify-between gap-3 px-4 py-4 sm:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <SchoolLogo name={school.name} logoUrl={school.logoUrl} />
