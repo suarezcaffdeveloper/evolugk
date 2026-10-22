@@ -1,3 +1,4 @@
+import "server-only";
 import { randomInt } from "node:crypto";
 
 export const PIN_LENGTH = 6;

@@ -169,6 +169,14 @@ body {
   animation: new-glint 2.2s ease-out 2;
 }
 
+/* Mientras una pantalla muestra su esqueleto de carga el pie no se ve: la página todavía es corta y
+   el pie quedaría pegado al borde de abajo; al llegar el contenido, más largo, lo empujaría fuera
+   de la pantalla de golpe (era el mayor desplazamiento de diseño de las pantallas con sesión,
+   CLS 0,13 a 0,20). Un elemento oculto no cuenta como desplazamiento. */
+.school-brand:has([aria-busy="true"], .animate-pulse) footer {
+  visibility: hidden;
+}
+
 /* Quien tiene activado "reducir movimiento" no ve animaciones */
 @media (prefers-reduced-motion: reduce) {
   *,

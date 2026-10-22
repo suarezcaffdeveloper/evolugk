@@ -1,6 +1,9 @@
 "use client";
 
-import MuxPlayer, { type MuxPlayerRefAttributes } from "@mux/mux-player-react";
+// Versión perezosa: el reproductor (~1,2 MB) se descarga cuando el video entra en pantalla y no
+// antes de que la página pueda hidratarse. El tipo se importa aparte porque no pesa nada.
+import MuxPlayer from "@mux/mux-player-react/lazy";
+import type { MuxPlayerRefAttributes } from "@mux/mux-player-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
 import { formatDuration } from "@/lib/video-schemas";
@@ -109,6 +112,7 @@ export function VideoStage({ slug, videoId, title, comments, staff }: Props) {
             playbackId={source.playbackId}
             tokens={source.tokens}
             streamType="on-demand"
+            loading="viewport"
             title={title}
             // Sin analítica ni cookies del reproductor, y sin atajos que no hacen falta.
             disableTracking

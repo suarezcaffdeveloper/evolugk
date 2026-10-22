@@ -186,5 +186,8 @@ export async function completeFirstLogin(
   ).toBeVisible();
   for (const name of acceptFor) await page.getByLabel(name).check();
   await page.getByRole("button", { name: "Continuar" }).click();
+  // Se espera a que el consentimiento se guarde y la app salga del primer ingreso: si un test
+  // navega antes, la acción se cancela y el portal lo devuelve a esta pantalla.
+  await page.waitForURL((url) => !url.pathname.endsWith("/primer-ingreso"));
   return newPin;
 }

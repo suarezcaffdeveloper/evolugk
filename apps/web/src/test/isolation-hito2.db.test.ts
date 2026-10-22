@@ -4,7 +4,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { generateAccessCode } from "@/lib/access-code";
+import { generateAccessCode } from "@/server/guardian/access-code";
 import {
   cleanup,
   createAdminClient,

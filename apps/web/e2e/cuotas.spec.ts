@@ -100,8 +100,12 @@ test("el profesor no accede a cuotas ni a Mi plan", async ({ page }) => {
     await page.goto(`/${world.school.slug}/panel/${path}`);
     await expect(page).toHaveURL(new RegExp(`/${world.school.slug}/panel$`));
   }
-  await expect(page.getByRole("heading", { name: "Cuotas" })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Mi plan" })).toHaveCount(0);
+  // Primero se espera a que el panel del profesor termine de cargar: comprobar una ausencia antes
+  // pasaría vacío, con la pantalla todavía en su esqueleto. Los nombres son exactos porque el
+  // saludo ("Hola, coach-cuotas") también contiene la palabra.
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Hola");
+  await expect(page.getByRole("heading", { name: "Cuotas", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Mi plan", exact: true })).toHaveCount(0);
 });
 
 test("Mi plan muestra el uso y el vencimiento, sin precio ni pagos", async ({ page }) => {
