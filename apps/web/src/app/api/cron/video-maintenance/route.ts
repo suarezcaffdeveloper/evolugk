@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAuthorizedCron } from "@/server/cron-auth";
 import { createConfiguredTransport } from "@/server/email/transport";
 import { createServiceClient } from "@/server/supabase";
 import { flushVideoNotices, retryProviderCleanup } from "@/server/videos";
@@ -10,8 +11,7 @@ import { getVideoProvider } from "@/server/video";
  * (por ejemplo, Vercel Cron cada pocos minutos) con `Authorization: Bearer <CRON_SECRET>`.
  */
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET?.trim();
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!isAuthorizedCron(request)) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 

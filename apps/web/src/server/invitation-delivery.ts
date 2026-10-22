@@ -1,3 +1,4 @@
+import "server-only";
 import { getAppUrl } from "./config";
 import { invitationEmail, type InvitableRole } from "./email/templates";
 import type { EmailTransport, SendResult } from "./email/transport";

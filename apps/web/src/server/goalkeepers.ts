@@ -1,3 +1,4 @@
+import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { argentinaDate } from "@/lib/dates";
 import { generateAccessCode } from "@/lib/access-code";

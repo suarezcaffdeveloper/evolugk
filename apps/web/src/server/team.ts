@@ -1,3 +1,4 @@
+import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Equipo de una escuela: lista y activación/desactivación de cuentas (spec 00, RF-13). */

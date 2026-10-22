@@ -1,3 +1,4 @@
+import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fieldErrorsFrom, loginSchema, type FieldErrors } from "@/lib/auth-schemas";
 import { isValidSlug, normalizeSlug } from "@/lib/slug";
