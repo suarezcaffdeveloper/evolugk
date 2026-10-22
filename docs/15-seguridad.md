@@ -24,6 +24,7 @@
 1. **Cron:** el secreto se compara en tiempo constante (`server/cron-auth.ts`) en las dos tareas.
 2. **`server-only`** en todos los módulos de `src/server` que faltaba, salvo `operator.ts` y `operator-cli.ts` (los usa `create-operator.ts` con Node plano). Si alguien los importa desde un componente de cliente, el build falla.
 3. **Cabeceras** en todas las rutas (`next.config.ts`): HSTS, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` y `Permissions-Policy`. Verificadas sobre el build.
+4. **Política de contenido (CSP)**, ver la sección siguiente.
 
 ## Borrado definitivo de una escuela (spec 00, RN-09)
 Manual, irreversible y solo para el operador, en `/operator/escuelas/{slug}` (sección "Estado de la escuela").
@@ -37,12 +38,40 @@ Manual, irreversible y solo para el operador, en `/operator/escuelas/{slug}` (se
 - **Permisos:** la función SQL solo la ejecuta `service_role`; la acción exige operador con verificación en dos pasos.
 - **Pruebas:** `src/test/school-deletion.db.test.ts` (condiciones y borde de los 90 días, confirmación, qué se borra y qué se conserva, proveedor caído, subida sin terminar, aislamiento entre escuelas, atomicidad y permisos).
 
+## Política de contenido (CSP)
+Cabecera `Content-Security-Policy` en todas las rutas (`next.config.ts`).
+
+| Directiva | Valor | Por qué |
+|---|---|---|
+| `default-src` | `'self'` | Todo lo no listado solo puede venir de la propia app |
+| `script-src` | `'self' 'unsafe-inline'` | **Decisión:** sin nonces (ver abajo) |
+| `style-src` | `'self' 'unsafe-inline'` | Atributos `style` de React y etiquetas `<style>` que inyecta el reproductor de Mux |
+| `img-src` | `'self' data: blob: https://image.mux.com` | Miniaturas del reproductor |
+| `connect-src` | `'self' https://*.mux.com` | Reproducción (`stream.mux.com`) y subida directa (`direct-uploads-*.mux.com`) |
+| `media-src` | `'self' blob: https://stream.mux.com https://image.mux.com` | Video y guion gráfico de las vistas previas |
+| `worker-src` | `'self' blob:` | Service worker y el worker del reproductor |
+| `font-src` | `'self'` | Las fuentes son propias |
+| `object-src` | `'none'` | Sin plugins |
+| `base-uri`, `form-action` | `'self'` | Evitan redirigir formularios o rutas relativas a otro sitio |
+| `frame-ancestors` | `'none'` | Nadie incrusta la app (clickjacking) |
+
+**Por qué `'unsafe-inline'` en scripts.** La guía de esta versión de Next dice que los nonces son incompatibles con Partial Prerendering, y el proyecto usa `cacheComponents`: habría que renderizar todas las páginas en cada pedido y se perdería el shell estático que se optimizó en el hito de rendimiento. Se acepta `'unsafe-inline'` y se compensa cerrando todo lo demás: la política sigue bloqueando scripts de otros orígenes, `eval`, plugins, formularios hacia afuera, base y la incrustación. **Qué no cubre:** si alguien lograra inyectar HTML en una pantalla, un script en línea se ejecutaría. Por eso el resto de los controles (escape de React, validación de entradas) sigue siendo la primera defensa. Alternativas evaluadas y descartadas por ahora: nonces con `proxy.ts` (pierde lo estático, riesgo con `cacheComponents`) y SRI experimental (la guía no aclara que cubra los scripts en línea, que son los 421 avisos de la primera medición).
+
+**Cómo se armó.** Primero en modo solo-reporte con una política estricta, recorriendo 33 pantallas por rol (521 avisos: scripts en línea, `style` en línea y `eval`, y ninguno de origen). Después, con la política definitiva activa y un video sembrado con identificador falso, el reproductor reveló tres cosas que el resto de las pantallas no mostraban:
+- `<style>` inyectados por el reproductor (428 avisos) → `style-src 'unsafe-inline'`.
+- El guion gráfico viene de `image.mux.com` por `media-src` → se agregó.
+- **Chromecast:** el reproductor carga `www.gstatic.com/cv/js/sender/v1/cast_sender.js`. **No se permite a propósito:** no hay opción para apagarlo y no se justifica abrir un script de Google en una plataforma con videos de menores. El script queda bloqueado (única violación que se ve en las páginas de video), el botón de transmitir no aparece y el reproductor sigue funcionando.
+- **`eval`:** zod 4 sondea `new Function("")`; se evitó con `z.config({ jitless: true })` (`lib/zod-config.ts`). Sin `unsafe-eval` en producción (en desarrollo sí, para el recarga en caliente).
+
+**Pruebas.** `e2e/csp.spec.ts`: la cabecera tiene las directivas clave y no tiene `unsafe-eval` ni comodines, y el ingreso, el panel (lista, alta, ficha, asistencia, subir video) y la privacidad no generan ninguna violación. Si se agrega un origen nuevo (por ejemplo un servicio de errores), el test falla antes de que el navegador lo bloquee en producción.
+
+**Sin verificar:** la reproducción y la subida con un **video real de Mux** (se probó con un identificador falso: la CSP se evalúa igual, pero no se vio un video reproducirse) y el comportamiento en un celular real. Si Mux cambiara el dominio de las URLs de subida fuera de `*.mux.com`, las subidas fallarían: hoy usa `direct-uploads-oci-us-phoenix-1-vop1.mux.com`.
+
 ## Pendiente
 | # | Tema | Gravedad | Detalle |
 |---|---|---|---|
-| 1 | Política de contenido (CSP) | Media | Falta. Hay que armar la lista de orígenes (Mux, Supabase, fuentes) y probarla en navegador en modo solo-reporte antes de imponerla |
-| 2 | `invitation.token_hash` legible por el staff | Baja | Es SHA-256 de 256 bits aleatorios: no se puede revertir. Aun así no hace falta exponerlo; se puede quitar de los privilegios de columna |
-| 3 | Funciones trigger con `EXECUTE` a PUBLIC | Baja | Son de tipo invoker y `anon` no tiene acceso al esquema `app`; se pueden revocar por prolijidad |
-| 4 | Límite de intentos del login del staff | A revisar | Confirmar la configuración de Auth en el proyecto de producción |
-| 5 | `new Date()` al renderizar la invitación | Baja | En el build de producción, la página `/{slug}/invitacion/{token}` registra en el servidor «encountered the unstable value `new Date()` while prerendering» (viene del valor por defecto de `lookupInvitation`). **No se ve en pantalla:** con un token válido la página renderiza completa. Conviene pasar la fecha desde un componente dinámico para evitar el error y que Next pueda armar la parte estática |
-| 6 | `APP_URL` obligatoria en producción | Para el lanzamiento | Sin ella, publicar una evaluación falla con un error del servidor (a propósito: evita mails con links a `localhost`). Definirla en Vercel con la dirección pública, y para correr los e2e contra el build: `APP_URL=http://localhost:3000 E2E_PROD=1 pnpm test:e2e` |
+| 1 | `invitation.token_hash` legible por el staff | Baja | Es SHA-256 de 256 bits aleatorios: no se puede revertir. Aun así no hace falta exponerlo; se puede quitar de los privilegios de columna |
+| 2 | Funciones trigger con `EXECUTE` a PUBLIC | Baja | Son de tipo invoker y `anon` no tiene acceso al esquema `app`; se pueden revocar por prolijidad |
+| 3 | Límite de intentos del login del staff | A revisar | Confirmar la configuración de Auth en el proyecto de producción |
+| 4 | `new Date()` al renderizar la invitación | Baja | En el build de producción, la página `/{slug}/invitacion/{token}` registra en el servidor «encountered the unstable value `new Date()` while prerendering» (viene del valor por defecto de `lookupInvitation`). **No se ve en pantalla:** con un token válido la página renderiza completa. Conviene pasar la fecha desde un componente dinámico para evitar el error y que Next pueda armar la parte estática |
+| 5 | `APP_URL` obligatoria en producción | Para el lanzamiento | Sin ella, publicar una evaluación falla con un error del servidor (a propósito: evita mails con links a `localhost`). Definirla en Vercel con la dirección pública, y para correr los e2e contra el build: `APP_URL=http://localhost:3000 E2E_PROD=1 pnpm test:e2e` |

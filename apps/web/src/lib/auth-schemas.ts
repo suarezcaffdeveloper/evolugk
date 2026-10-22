@@ -1,4 +1,5 @@
 import { z } from "zod";
+import "./zod-config";
 
 /** Mensajes en español para los formularios de ingreso. */
 export const loginSchema = z.object({

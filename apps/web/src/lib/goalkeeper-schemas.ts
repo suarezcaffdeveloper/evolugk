@@ -1,4 +1,5 @@
 import { z } from "zod";
+import "./zod-config";
 
 /** Validaciones de arqueros, tutores, medidas y grupos (spec 01). Mensajes en español (es-AR). */
 
