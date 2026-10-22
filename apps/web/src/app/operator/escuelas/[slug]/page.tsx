@@ -57,8 +57,14 @@ const FIELD_LABELS: Record<string, string> = {
 
 export default function SchoolDetailPage({ params }: PageProps<"/operator/escuelas/[slug]">) {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 pb-16 pt-4">
-      <Link href="/operator" className="text-sm font-semibold text-ink-muted hover:text-ink">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 pb-16 pt-4"
+    >
+      <Link
+        href="/operator"
+        className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
+      >
         ← Volver a las escuelas
       </Link>
       <Suspense
@@ -171,7 +177,7 @@ async function SchoolDetail({ params }: Pick<PageProps<"/operator/escuelas/[slug
             )}
             <PaymentForm schoolId={school.id} slug={school.slug} today={today} />
             <details className="pt-2">
-              <summary className="cursor-pointer text-sm font-semibold">
+              <summary className="cursor-pointer py-2 text-sm font-semibold">
                 Ajustar “cubierto hasta” a mano
               </summary>
               <div className="pt-3">

@@ -11,7 +11,10 @@ export const metadata: Metadata = {
 
 export default function RecoverPage({ params }: PageProps<"/[slug]/recuperar">) {
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 pb-16">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 pb-16"
+    >
       <Suspense
         fallback={<div className="h-64 animate-pulse rounded-card bg-line" aria-busy="true" />}
       >

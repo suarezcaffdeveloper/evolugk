@@ -15,7 +15,10 @@ export const metadata: Metadata = {
 
 export default function SchoolHomePage({ params }: PageProps<"/[slug]">) {
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-5 px-4 pb-16">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-5 px-4 pb-16"
+    >
       <Suspense fallback={<LoginSkeleton />}>
         <FamilyLogin params={params} />
       </Suspense>
@@ -52,7 +55,7 @@ async function FamilyLogin({ params }: Pick<PageProps<"/[slug]">, "params">) {
       <p className="rise-in text-center text-sm" style={{ "--i": 2 } as CSSProperties}>
         <Link
           href={`/${slug}/login`}
-          className="font-semibold text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+          className="inline-flex min-h-11 items-center font-semibold text-ink-muted underline-offset-4 hover:text-ink hover:underline"
         >
           Ingreso del equipo
         </Link>

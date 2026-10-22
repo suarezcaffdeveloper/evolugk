@@ -41,7 +41,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {/* Primer foco de la página: salta el encabezado y va directo al contenido (WCAG 2.4.1). */}
+        <a
+          href="#contenido"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-control focus:bg-surface focus:px-4 focus:py-3 focus:font-semibold focus:text-ink focus:shadow-card-hover"
+        >
+          Saltar al contenido
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

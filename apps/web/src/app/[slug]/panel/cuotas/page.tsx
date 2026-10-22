@@ -17,7 +17,10 @@ export const metadata: Metadata = {
 
 export default function FeesPage({ params }: PageProps<"/[slug]/panel/cuotas">) {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-4">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-4"
+    >
       <Suspense
         fallback={<div className="h-60 animate-pulse rounded-card bg-line" aria-busy="true" />}
       >
@@ -42,7 +45,10 @@ async function FeesContent({ params }: Pick<PageProps<"/[slug]/panel/cuotas">, "
 
   return (
     <>
-      <Link href={base} className="text-sm font-semibold text-ink-muted hover:text-ink">
+      <Link
+        href={base}
+        className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
+      >
         ← Panel
       </Link>
       <div className="rise-in flex flex-wrap items-center justify-between gap-2">

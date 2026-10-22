@@ -14,7 +14,10 @@ export default function EditGoalkeeperPage({
   params,
 }: PageProps<"/[slug]/panel/arqueros/[id]/editar">) {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-4">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-4"
+    >
       <Suspense
         fallback={<div className="h-96 animate-pulse rounded-card bg-line" aria-busy="true" />}
       >
@@ -52,7 +55,7 @@ async function EditContent({
     <>
       <Link
         href={`/${session.school.slug}/panel/arqueros/${id}`}
-        className="text-sm font-semibold text-ink-muted hover:text-ink"
+        className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
       >
         ← Volver a la ficha
       </Link>

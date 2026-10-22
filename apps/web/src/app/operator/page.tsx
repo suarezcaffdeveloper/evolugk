@@ -16,7 +16,10 @@ type OperatorSearchParams = PageProps<"/operator">["searchParams"];
 
 export default function OperatorHomePage({ searchParams }: PageProps<"/operator">) {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 pb-16 pt-4">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 pb-16 pt-4"
+    >
       <Suspense
         fallback={<div className="h-40 animate-pulse rounded-card bg-line" aria-busy="true" />}
       >

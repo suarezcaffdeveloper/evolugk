@@ -64,7 +64,7 @@ export function SetupFlow() {
               className="rise-in mx-auto h-48 w-48 rounded-control border border-line bg-white p-2"
             />
             <details className="text-ink-muted">
-              <summary className="cursor-pointer font-medium text-ink">
+              <summary className="cursor-pointer py-2 font-medium text-ink">
                 ¿No podés escanearlo?
               </summary>
               <p className="mt-2">Ingresá esta clave a mano en tu app:</p>

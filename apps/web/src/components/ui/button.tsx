@@ -8,7 +8,7 @@ const variants: Record<Variant, string> = {
   primary: "bg-accent text-on-accent shadow-card hover:shadow-card-hover hover:brightness-110",
   secondary: "bg-surface text-ink border border-line hover:bg-accent-soft",
   ghost: "text-ink hover:bg-accent-soft",
-  danger: "bg-danger text-white shadow-card hover:brightness-110",
+  danger: "bg-danger text-on-danger shadow-card hover:brightness-110",
 };
 
 // Áreas táctiles de al menos 44 px (md y lg), como pide el brief para el profesor.

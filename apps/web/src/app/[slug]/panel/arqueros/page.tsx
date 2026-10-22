@@ -34,7 +34,10 @@ export default function GoalkeepersPage({
   searchParams,
 }: PageProps<"/[slug]/panel/arqueros">) {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 pb-16 pt-4">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 pb-16 pt-4"
+    >
       <Suspense
         fallback={<div className="h-64 animate-pulse rounded-card bg-line" aria-busy="true" />}
       >
@@ -75,7 +78,7 @@ async function GoalkeepersContent({
     <>
       <Link
         href={`/${session.school.slug}/panel`}
-        className="text-sm font-semibold text-ink-muted hover:text-ink"
+        className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
       >
         ← Volver al panel
       </Link>

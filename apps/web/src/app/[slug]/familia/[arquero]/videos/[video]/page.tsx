@@ -54,7 +54,7 @@ async function FamilyVideoContent({ params }: Pick<Props, "params">) {
     <PortalFrame slug={session.schoolSlug} goalkeepers={goalkeepers} currentId={goalkeeper.id}>
       <Link
         href={`/${session.schoolSlug}/familia/${goalkeeper.id}/videos`}
-        className="text-sm font-semibold text-ink-muted hover:text-ink"
+        className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
       >
         ← Videos
       </Link>

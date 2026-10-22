@@ -39,7 +39,10 @@ export function PortalFrame({
     : [{ href: `${base}/mis-datos`, label: "Mis datos" }];
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-2">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-2"
+    >
       {goalkeepers.length > 1 && (
         <form
           action={selectGoalkeeperAction.bind(null, slug)}

@@ -88,7 +88,7 @@ test("evaluación en borrador, publicación, evolución y notas", async ({ page 
   // 2) La familia no ve el borrador (CA-01).
   await familyEntersPortal(page, true);
   await page.getByRole("link", { name: "Evolución", exact: true }).click();
-  await expect(page.getByText("Todavía no hay evaluaciones")).toBeVisible();
+  await expect(page.getByText("Todavía no hay evaluaciones", { exact: true })).toBeVisible();
 
   // 3) El profesor publica.
   await page.context().clearCookies();

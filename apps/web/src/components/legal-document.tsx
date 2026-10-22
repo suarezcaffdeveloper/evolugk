@@ -12,8 +12,11 @@ export function LegalDocument({
   other: { href: string; label: string };
 }) {
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 space-y-5 px-4 pb-16 pt-6">
-      <Link href="/" className="text-sm font-semibold text-ink-muted hover:text-ink">
+    <main id="contenido" className="mx-auto w-full max-w-2xl flex-1 space-y-5 px-4 pb-16 pt-6">
+      <Link
+        href="/"
+        className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
+      >
         ← EvoluGK
       </Link>
 
@@ -30,12 +33,12 @@ export function LegalDocument({
       )}
 
       <nav aria-label="Secciones" className="rounded-card border border-line bg-surface p-4">
-        <ol className="space-y-1 text-sm">
+        <ol className="text-sm">
           {doc.sections.map((section) => (
             <li key={section.id}>
               <a
                 href={`#${section.id}`}
-                className="text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+                className="inline-block py-1.5 text-ink-muted underline-offset-4 hover:text-ink hover:underline"
               >
                 {section.heading}
               </a>
@@ -66,7 +69,7 @@ export function LegalDocument({
       <p className="text-sm">
         <Link
           href={other.href}
-          className="font-semibold text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+          className="inline-flex min-h-11 items-center font-semibold text-ink-muted underline-offset-4 hover:text-ink hover:underline"
         >
           {other.label}
         </Link>
@@ -78,7 +81,10 @@ export function LegalDocument({
 /** Enlaces a los dos textos, para pies de página y pantallas de consentimiento. */
 export function LegalLinks({ newTab = false }: { newTab?: boolean }) {
   const props = newTab ? { target: "_blank", rel: "noopener noreferrer" } : {};
-  const cls = "font-semibold underline underline-offset-4 hover:text-ink";
+  // En un pie o en su propia línea se agranda el área táctil (24 px o más de alto). Dentro de una
+  // frase (el caso `newTab`, en el consentimiento) no: el relleno rompería el interlineado y los
+  // enlaces dentro de un texto no tienen ese requisito.
+  const cls = `${newTab ? "" : "inline-block py-3 "}font-semibold underline underline-offset-4 hover:text-ink`;
   return (
     <>
       <Link href="/privacidad" className={cls} {...props}>

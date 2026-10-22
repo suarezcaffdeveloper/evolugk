@@ -3,9 +3,9 @@ import { cn } from "@/lib/cn";
 import { MONTH_NAMES, shiftMonth, type CalendarCell, type DayStatus } from "@/lib/attendance";
 
 const STATUS: Record<DayStatus, { label: string; className: string }> = {
-  present: { label: "Presente", className: "bg-success text-white" },
-  absent: { label: "Ausente", className: "bg-danger text-white" },
-  excused: { label: "Justificada", className: "bg-warning text-white" },
+  present: { label: "Presente", className: "bg-success text-on-success" },
+  absent: { label: "Ausente", className: "bg-danger text-on-danger" },
+  excused: { label: "Justificada", className: "bg-warning text-on-warning" },
   suspended: { label: "Suspendida", className: "bg-line text-ink" },
   unmarked: {
     label: "Sin marcar",
