@@ -235,6 +235,7 @@ export async function setStatusAction(
     actorId: session.user.id,
     goalkeeperId,
     status,
+    today: argentinaDate(new Date()),
   });
   if (!result.ok) return { error: ERRORS[result.error] };
   refresh(session.school.slug, goalkeeperId);

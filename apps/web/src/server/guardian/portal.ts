@@ -46,6 +46,8 @@ export type FamilyGoalkeeper = {
   firstName: string;
   lastName: string;
   status: GoalkeeperStatus;
+  /** Exento de cuota: el portal no muestra la sección de cuota (spec 06, RF-40). */
+  feeExempt: boolean;
   relationship: Relationship;
   consent: ConsentStatus;
 };
@@ -66,7 +68,7 @@ export async function listFamilyGoalkeepers(
   const [{ data: rows }, { data: consents }] = await Promise.all([
     db
       .from("goalkeeper")
-      .select("id, first_name, last_name, status")
+      .select("id, first_name, last_name, status, fee_exempt")
       .eq("school_id", session.schoolId)
       .in("id", ids),
     db
@@ -91,6 +93,7 @@ export async function listFamilyGoalkeepers(
       firstName: r.first_name as string,
       lastName: r.last_name as string,
       status: r.status as GoalkeeperStatus,
+      feeExempt: r.fee_exempt === true,
       relationship: relationship.get(r.id) as Relationship,
       consent: consentStatusOf(consentsBy.get(r.id) ?? []),
     }))

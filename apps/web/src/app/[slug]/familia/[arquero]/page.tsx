@@ -17,6 +17,8 @@ import {
 import { currentEvaluation, radarValues } from "@/lib/evolution";
 import { getFamilyEvolution, toEvolutionSeries } from "@/server/guardian/evaluations";
 import { getFamilyAttendance } from "@/server/guardian/attendance";
+import { getFamilyFees } from "@/server/guardian/fees";
+import { STANDING_LABELS } from "@/lib/fees";
 import { listFamilyVideos } from "@/server/guardian/videos";
 import { VIDEO_TOPIC_LABELS } from "@/lib/video-schemas";
 import {
@@ -61,7 +63,7 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
   const goalkeeper = goalkeepers.find((g) => g.id === arquero);
   if (!goalkeeper) notFound();
   const today = argentinaDate(new Date());
-  const [profile, evolution, videos, attendance] = await Promise.all([
+  const [profile, evolution, videos, attendance, fees] = await Promise.all([
     getFamilyGoalkeeperProfile(db, session, goalkeeper.id),
     getFamilyEvolution(db, session, goalkeeper.id),
     listFamilyVideos(db, session, goalkeeper.id),
@@ -72,6 +74,7 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
       { year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) },
       today,
     ),
+    getFamilyFees(db, session, goalkeeper.id, today),
   ]);
   const newCount = evolution.newCount + videos.newCount;
   const latestVideo = videos.videos[0];
@@ -197,6 +200,30 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
               en los últimos 90 días.
             </p>
           )}
+        </Card>
+      )}
+
+      {fees.available && (
+        <Card className="space-y-1">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-lg font-bold">Cuota</h2>
+            <Link
+              href={`/${session.schoolSlug}/familia/${goalkeeper.id}/cuotas`}
+              className="text-sm font-semibold underline underline-offset-4"
+            >
+              Ver historial
+            </Link>
+          </div>
+          <p className="text-ink-muted">
+            <strong className="text-ink">{STANDING_LABELS[fees.standing]}</strong>
+            {fees.current && (
+              <>
+                {" · se paga el "}
+                {formatCalendarDate(fees.current.dueOn)}, vence el{" "}
+                {formatCalendarDate(fees.current.graceUntil)}
+              </>
+            )}
+          </p>
         </Card>
       )}
 

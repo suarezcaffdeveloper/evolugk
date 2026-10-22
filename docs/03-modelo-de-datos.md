@@ -12,9 +12,9 @@ Este documento refleja las specs [00](../specs/00-auth-y-tenancy.md) a [07](../s
   - `suspendida_en` marca el inicio de los 90 días de conservación de datos.
 - `subscription` (id, school_id único, precio_mensual_ars, tope_arqueros, tope_minutos_video, prueba_hasta, cubierto_hasta, suspendida_manual) — condiciones a medida por escuela, sin catálogo de planes (spec 07).
   - El estado `prueba | al_dia | vencida | suspendida` se **calcula por fechas** (gracia de 10 días tras `cubierto_hasta`); solo se guarda la suspensión manual.
-- `subscription_payment` (id, school_id, fecha_pago, monto_ars, meses_cubiertos, nota, registrado_por, anulado) — cada pago suma sus meses a `cubierto_hasta`.
+- `subscription_payment` (id, school_id, fecha_pago, monto_ars, meses_cubiertos, nota, registrado_por, cubierto_antes, cubierto_despues, anulado) — cada pago suma sus meses a `cubierto_hasta`.
 - `subscription_change` (id, school_id, campo, valor_anterior, valor_nuevo, nota, hecho_por, hecho_en) — historial de condiciones.
-- `platform_alert` (id, tipo, school_id, creada_en, resuelta_en, descartada) — alertas del operador: pruebas por terminar o sin cerrar, vencimientos, gracia terminada, topes de arqueros (90% / superado) y de video (80% / 100%).
+- `platform_alert` (id, tipo, school_id, creada_en, resuelta_en, descartada, avisada_en) — alertas del operador: pruebas por terminar o sin cerrar, vencimientos, gracia terminada, topes de arqueros (90% / superado) y de video (80% / 100%).
   - Solo el operador accede a `subscription*` y `platform_alert`.
 
 ### Usuarios e invitaciones
@@ -71,8 +71,8 @@ Este documento refleja las specs [00](../specs/00-auth-y-tenancy.md) a [07](../s
 - `attendance_revision` (id, school_id, entry_id, editado_por, editado_en, valor_anterior, valor_nuevo)
 
 ### Cuotas y avisos
-- `fee` (id, school_id, goalkeeper_id, numero, fecha_pago, vence_el, estado guardado: `pagada | anulada`, pagada_en, automatica, nota, registrada_por) — **sin monto**; pendiente / por vencer / vencida se calculan por fecha (spec 06).
-- `fee_revision` (id, school_id, fee_id, editado_por, editado_en, detalle)
+- `fee` (id, school_id, goalkeeper_id, serie_inicio, numero, fecha_pago, vence_el, estado guardado: `abierta | pagada | anulada`, pagada_en, automatica, nota, registrada_por) — **sin monto**; pendiente / por vencer / vencida se calculan por fecha (spec 06). `serie_inicio` (`series_start_on`) es el inicio de cuotas con el que se generó: único por (arquero, serie, número).
+- `fee_revision` (id, school_id, fee_id, editado_por, editado_en, accion, estado y fecha de pago anteriores y nuevos, nota)
 - `notification_log` (id, school_id, tipo: `cuota_5_antes | cuota_dia_pago | cuota_vencimiento | cuota_3_despues | evaluacion_publicada | video_publicado | consentimiento_retirado | ...`, fee_id opcional, destinatario, enviado_en, estado)
 - `admin_alert` (id, school_id, tipo: `faltas_seguidas | consentimiento_retirado | ...`, goalkeeper_id, creada_en, resuelta_en)
 - `audit_log` (id, school_id, actor, accion, entidad, entidad_id, creado_en)

@@ -9,6 +9,8 @@ import { requireStaff } from "@/server/auth/guards";
 import { listPendingGoalkeepers } from "@/server/evaluations";
 import { listAbsenceAlerts } from "@/server/attendance";
 import { getVideoQuota } from "@/server/videos";
+import { listFeePanel } from "@/server/fees";
+import { getSchoolPlan } from "@/server/subscriptions";
 import { DismissAlertButton } from "./asistencia/alert-controls";
 import { createServiceClient } from "@/server/supabase";
 import { logoutAction } from "../login/actions";
@@ -36,7 +38,9 @@ async function PanelContent({ params }: Pick<PageProps<"/[slug]/panel">, "params
   const { slug } = await params;
   const session = await requireStaff(slug);
   const db = createServiceClient();
-  const [pending, quota, alerts] = await Promise.all([
+  const isAdmin = session.role === "school_admin";
+  const today = argentinaDate(new Date());
+  const [pending, quota, alerts, feePanel, plan] = await Promise.all([
     listPendingGoalkeepers(db, session.school.id, argentinaDate(new Date())),
     // El consumo de video lo ve la administración (spec 03, RF-31).
     session.role === "school_admin" ? getVideoQuota(db, session.school.id) : Promise.resolve(null),
@@ -44,7 +48,12 @@ async function PanelContent({ params }: Pick<PageProps<"/[slug]/panel">, "params
     session.role === "school_admin"
       ? listAbsenceAlerts(db, session.school.id)
       : Promise.resolve([]),
+    // Cuotas y plan: solo la administración (spec 06, RF-36; spec 07, RF-34).
+    isAdmin ? listFeePanel(db, { schoolId: session.school.id, today }) : Promise.resolve([]),
+    isAdmin ? getSchoolPlan(db, session.school.id, today) : Promise.resolve(null),
   ]);
+  const overdueFees = feePanel.filter((f) => f.status === "overdue").length;
+  const dueSoonFees = feePanel.length - overdueFees;
 
   return (
     <>
@@ -80,6 +89,43 @@ async function PanelContent({ params }: Pick<PageProps<"/[slug]/panel">, "params
           </p>
         </Card>
       </a>
+
+      {isAdmin && (
+        <Link
+          href={`/${session.school.slug}/panel/cuotas`}
+          className="rise-in block rounded-card focus-visible:outline-offset-4"
+          style={{ "--i": 1 } as CSSProperties}
+        >
+          <Card interactive className="space-y-1">
+            <h2 className="font-display text-lg font-bold">Cuotas</h2>
+            <p className="text-ink-muted">
+              {overdueFees + dueSoonFees === 0
+                ? "Todo al día. Mirá el resumen de cobranza."
+                : [
+                    overdueFees > 0 &&
+                      `${overdueFees} ${overdueFees === 1 ? "vencida" : "vencidas"}`,
+                    dueSoonFees > 0 && `${dueSoonFees} por vencer`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+            </p>
+          </Card>
+        </Link>
+      )}
+
+      {plan && plan.goalkeepers.level !== "ok" && (
+        <Card
+          className="rise-in space-y-1 border-warning/50 bg-warning/10"
+          style={{ "--i": 1 } as CSSProperties}
+        >
+          <h2 className="font-display text-lg font-bold">Tope de arqueros</h2>
+          <p>
+            {plan.goalkeepers.level === "exceeded"
+              ? `Tenés ${plan.goalkeepers.active} arqueros activos y tu plan incluye ${plan.goalkeepers.limit}. No se bloquea nada: EvoluGK se va a comunicar para ajustar el plan.`
+              : `Tenés ${plan.goalkeepers.active} de ${plan.goalkeepers.limit} arqueros activos (${plan.goalkeepers.percent}%).`}
+          </p>
+        </Card>
+      )}
 
       {alerts.length > 0 && (
         <Card
@@ -188,6 +234,19 @@ async function PanelContent({ params }: Pick<PageProps<"/[slug]/panel">, "params
           <Card interactive className="space-y-1">
             <h2 className="font-display text-lg font-bold">Grupos</h2>
             <p className="text-ink-muted">Organizá a los arqueros por edad, nivel u horario.</p>
+          </Card>
+        </Link>
+      )}
+
+      {session.role === "school_admin" && (
+        <Link
+          href={`/${session.school.slug}/panel/plan`}
+          className="rise-in block rounded-card focus-visible:outline-offset-4"
+          style={{ "--i": 3 } as CSSProperties}
+        >
+          <Card interactive className="space-y-1">
+            <h2 className="font-display text-lg font-bold">Mi plan</h2>
+            <p className="text-ink-muted">Uso de arqueros y video, y próximo vencimiento.</p>
           </Card>
         </Link>
       )}

@@ -139,7 +139,7 @@ Categorías de la rúbrica (`key`): `save_technique` (atajada), `aerial_play` (j
 | fecha_pago (fecha en que corresponde pagar) | `due_on` |
 | vence_el (fin de la gracia) | `grace_until` |
 | pagada_en | `paid_on` |
-| estado guardado: pagada / anulada | `status`: `paid` / `void` |
+| estado guardado: abierta / pagada / anulada | `status`: `open` / `paid` / `void` |
 | estado calculado: pendiente / por vencer / vencida | `upcoming` / `due_soon` / `overdue` |
 | automatica | `is_automatic` |
 

@@ -28,6 +28,8 @@ import {
   getCurrentRubric,
   publishEvaluation,
 } from "../src/server/evaluations";
+import { registerAdvance, setFeeExempt } from "../src/server/fees";
+import { refreshPlatformAlerts } from "../src/server/subscriptions";
 import { addMeasurement, createGoalkeeper, createGroup } from "../src/server/goalkeepers";
 import type { GuardianSpec } from "../src/server/goalkeepers";
 import { createAdminClient, createProfile, getConfig } from "../src/test/db";
@@ -625,6 +627,77 @@ it("carga los datos de ejemplo", async () => {
     "Tomás Acosta": "present",
   });
 
+  // ── Cuotas y suscripción (hito 6) ──
+  // Al dar de alta, cada arquero ya tiene su ciclo (cuota del ciclo vigente pagada, próxima a pagar).
+  // Bruno: dos cuotas vencidas (debe). Su ciclo empezó hace 75 días y solo pagó la primera.
+  const brunoId = goalkeeperIds.get("Bruno Gómez") ?? "";
+  const brunoStart = addDays(today, -75);
+  await db.from("fee").delete().eq("school_id", school.id).eq("goalkeeper_id", brunoId);
+  await db.from("goalkeeper").update({ fees_start_on: brunoStart }).eq("id", brunoId);
+  for (const n of [1, 2, 3]) {
+    const dueOn = n === 1 ? brunoStart : n === 2 ? addDays(today, -45) : addDays(today, -15);
+    await db.from("fee").insert({
+      school_id: school.id,
+      goalkeeper_id: brunoId,
+      series_start_on: brunoStart,
+      number: n,
+      due_on: dueOn,
+      grace_until: addDays(dueOn, 10),
+      status: n === 1 ? "paid" : "open",
+      paid_on: n === 1 ? dueOn : null,
+      is_automatic: n === 1,
+    });
+  }
+  // Martina: la cuota se paga dentro de 3 días (por vencer).
+  const martinaId = goalkeeperIds.get("Martina Ibarra") ?? "";
+  const martinaStart = addDays(today, -27);
+  await db.from("fee").delete().eq("school_id", school.id).eq("goalkeeper_id", martinaId);
+  await db.from("goalkeeper").update({ fees_start_on: martinaStart }).eq("id", martinaId);
+  for (const n of [1, 2]) {
+    const dueOn = n === 1 ? martinaStart : addDays(today, 3);
+    await db.from("fee").insert({
+      school_id: school.id,
+      goalkeeper_id: martinaId,
+      series_start_on: martinaStart,
+      number: n,
+      due_on: dueOn,
+      grace_until: addDays(dueOn, 10),
+      status: n === 1 ? "paid" : "open",
+      paid_on: n === 1 ? dueOn : null,
+      is_automatic: n === 1,
+    });
+  }
+  // Sofía: exenta (beca). Lucas: pagó dos meses por adelantado.
+  await setFeeExempt(db, {
+    ...actor,
+    goalkeeperId: goalkeeperIds.get("Sofía Medina") ?? "",
+    exempt: true,
+    note: "Beca deportiva",
+    today,
+  });
+  await registerAdvance(db, {
+    ...actor,
+    goalkeeperId: goalkeeperIds.get("Lucas Fernández") ?? "",
+    months: 2,
+    today,
+  });
+
+  // La escuela de ejemplo ya cerró su prueba y pagó dos meses; se calculan sus alertas.
+  await db
+    .from("subscription")
+    .update({ trial_until: null, covered_until: addDays(today, 40) })
+    .eq("school_id", school.id);
+  await db.from("subscription_payment").insert({
+    school_id: school.id,
+    paid_on: addDays(today, -20),
+    amount_ars: 40000,
+    months_covered: 2,
+    recorded_by: staff[0].id,
+    covered_before: addDays(today, -20),
+    covered_after: addDays(today, 40),
+  });
+  await refreshPlatformAlerts(db, today, [school.id]);
+
   // ── Resultado ──
   const lines = [
     "DATOS DE EJEMPLO — Escuela de Arqueros Demo",
@@ -646,6 +719,9 @@ it("carga los datos de ejemplo", async () => {
     "Asistencia: Infantil con 6 entrenamientos y uno suspendido por lluvia; Sofía con 3 ausencias seguidas (aviso",
     "para la administración), Bruno y Olivia con baja asistencia, Mateo con una justificada. Juvenil con una lista",
     "parcial (algunos sin marcar).",
+    "",
+    "Cuotas: Bruno debe dos cuotas (vencidas), Martina tiene la cuota por vencer en 3 días, Sofía es exenta",
+    "(beca) y Lucas pagó dos meses por adelantado. Los demás están al día. La escuela ya pagó su suscripción.",
     "",
     "Casos para mirar: hermanos con un solo tutor (Fernández, Ibarra), arquero adulto que es su propio",
     "tutor (Paz), consentimiento pendiente (Benítez, Medina, Domínguez), retirado (Rojas), arquero",
