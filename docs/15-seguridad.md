@@ -25,6 +25,7 @@
 2. **`server-only`** en todos los módulos de `src/server` que faltaba, salvo `operator.ts` y `operator-cli.ts` (los usa `create-operator.ts` con Node plano). Si alguien los importa desde un componente de cliente, el build falla.
 3. **Cabeceras** en todas las rutas (`next.config.ts`): HSTS, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` y `Permissions-Policy`. Verificadas sobre el build.
 4. **Política de contenido (CSP)**, ver la sección siguiente.
+5. **Privilegios** (migración `20261027090000`): `invitation.token_hash` deja de ser legible con la sesión del staff (privilegio por columna; el servidor lo sigue leyendo), y las funciones de trigger del esquema `app` pierden el `EXECUTE` a PUBLIC (más un `default privileges` para las nuevas). Verificado en la base real con `supabase/audit/*.sql` y con `src/test/privileges.db.test.ts`.
 
 ## Borrado definitivo de una escuela (spec 00, RN-09)
 Manual, irreversible y solo para el operador, en `/operator/escuelas/{slug}` (sección "Estado de la escuela").
@@ -70,8 +71,6 @@ Cabecera `Content-Security-Policy` en todas las rutas (`next.config.ts`).
 ## Pendiente
 | # | Tema | Gravedad | Detalle |
 |---|---|---|---|
-| 1 | `invitation.token_hash` legible por el staff | Baja | Es SHA-256 de 256 bits aleatorios: no se puede revertir. Aun así no hace falta exponerlo; se puede quitar de los privilegios de columna |
-| 2 | Funciones trigger con `EXECUTE` a PUBLIC | Baja | Son de tipo invoker y `anon` no tiene acceso al esquema `app`; se pueden revocar por prolijidad |
-| 3 | Límite de intentos del login del staff | A revisar | Confirmar la configuración de Auth en el proyecto de producción |
-| 4 | `new Date()` al renderizar la invitación | Baja | En el build de producción, la página `/{slug}/invitacion/{token}` registra en el servidor «encountered the unstable value `new Date()` while prerendering» (viene del valor por defecto de `lookupInvitation`). **No se ve en pantalla:** con un token válido la página renderiza completa. Conviene pasar la fecha desde un componente dinámico para evitar el error y que Next pueda armar la parte estática |
-| 5 | `APP_URL` obligatoria en producción | Para el lanzamiento | Sin ella, publicar una evaluación falla con un error del servidor (a propósito: evita mails con links a `localhost`). Definirla en Vercel con la dirección pública, y para correr los e2e contra el build: `APP_URL=http://localhost:3000 E2E_PROD=1 pnpm test:e2e` |
+| 1 | Límite de intentos del login del staff | A revisar | Confirmar la configuración de Auth en el proyecto de producción |
+| 2 | `new Date()` al renderizar la invitación | Baja | En el build de producción, la página `/{slug}/invitacion/{token}` registra en el servidor «encountered the unstable value `new Date()` while prerendering» (viene del valor por defecto de `lookupInvitation`). **No se ve en pantalla:** con un token válido la página renderiza completa. Conviene pasar la fecha desde un componente dinámico para evitar el error y que Next pueda armar la parte estática |
+| 3 | `APP_URL` obligatoria en producción | Para el lanzamiento | Sin ella, publicar una evaluación falla con un error del servidor (a propósito: evita mails con links a `localhost`). Definirla en Vercel con la dirección pública, y para correr los e2e contra el build: `APP_URL=http://localhost:3000 E2E_PROD=1 pnpm test:e2e` |
