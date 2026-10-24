@@ -1,4 +1,5 @@
 import { z } from "zod";
+import "./zod-config";
 import { formatCalendarDate } from "./dates";
 
 /** Validaciones y reglas puras de videos (spec 03). Mensajes en español (es-AR). */

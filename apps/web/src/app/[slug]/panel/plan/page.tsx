@@ -24,7 +24,10 @@ const STATE_LABELS = {
 
 export default function PlanPage({ params }: PageProps<"/[slug]/panel/plan">) {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-4">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-4"
+    >
       <Suspense
         fallback={<div className="h-60 animate-pulse rounded-card bg-line" aria-busy="true" />}
       >
@@ -86,7 +89,7 @@ async function PlanContent({ params }: Pick<PageProps<"/[slug]/panel/plan">, "pa
     <>
       <Link
         href={`/${session.school.slug}/panel`}
-        className="text-sm font-semibold text-ink-muted hover:text-ink"
+        className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
       >
         ← Panel
       </Link>

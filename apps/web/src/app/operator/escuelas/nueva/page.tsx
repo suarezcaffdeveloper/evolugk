@@ -8,8 +8,14 @@ export const metadata: Metadata = { title: "Nueva escuela · EvoluGK", robots: {
 
 export default function NewSchoolPage() {
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-4 px-4 pb-16 pt-4">
-      <Link href="/operator" className="text-sm font-semibold text-ink-muted hover:text-ink">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-4 px-4 pb-16 pt-4"
+    >
+      <Link
+        href="/operator"
+        className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
+      >
         ← Volver a las escuelas
       </Link>
       <Suspense

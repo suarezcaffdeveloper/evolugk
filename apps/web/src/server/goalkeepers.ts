@@ -1,6 +1,7 @@
+import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { argentinaDate } from "@/lib/dates";
-import { generateAccessCode } from "@/lib/access-code";
+import { generateAccessCode } from "./guardian/access-code";
 import {
   ADULT_AGE,
   ageOn,

@@ -29,7 +29,10 @@ type Props = PageProps<"/[slug]/panel/asistencia/sesion/[sessionId]">;
 
 export default function SessionPage({ params }: Props) {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-4">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-4"
+    >
       <Suspense
         fallback={<div className="h-96 animate-pulse rounded-card bg-line" aria-busy="true" />}
       >
@@ -62,7 +65,7 @@ async function SessionContent({ params }: Pick<Props, "params">) {
     <>
       <Link
         href={`/${session.school.slug}/panel/asistencia`}
-        className="text-sm font-semibold text-ink-muted hover:text-ink"
+        className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
       >
         ← Asistencia
       </Link>
@@ -131,7 +134,7 @@ async function SessionContent({ params }: Pick<Props, "params">) {
                   <span className="font-semibold">{revision.goalkeeperName}</span>:{" "}
                   {ENTRY_LABELS[revision.oldValue]} → {ENTRY_LABELS[revision.newValue]}
                   {revision.discarded && (
-                    <span className="ml-2 font-semibold text-warning">
+                    <span className="ml-2 font-semibold text-warning-ink">
                       (descartado: había una marca más reciente)
                     </span>
                   )}

@@ -1,15 +1,9 @@
-import { randomInt } from "node:crypto";
-
-/** Sin 0/O ni 1/I/L: el código se dicta por WhatsApp o en voz alta. */
-const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-const LENGTH = 8;
-
-/** Código de acceso de un tutor, sin guion: "K7QM4TXD". */
-export function generateAccessCode(): string {
-  let code = "";
-  for (let i = 0; i < LENGTH; i += 1) code += ALPHABET[randomInt(ALPHABET.length)];
-  return code;
-}
+/**
+ * Formato y validación del código de acceso de un tutor. Solo funciones puras: este módulo lo
+ * importa también código que corre en el navegador (la tarjeta de credenciales y la importación),
+ * así que NO puede traer `node:crypto`: el empaquetador lo reemplazaría por un polyfill de ~440 KB.
+ * El generador aleatorio vive en `server/guardian/access-code.ts`.
+ */
 
 /** Lo que se escribió → forma guardada (mayúsculas, sin espacios ni guiones). */
 export function normalizeAccessCode(input: string): string {

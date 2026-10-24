@@ -552,7 +552,7 @@ export function AttendanceApp({ slug, userId, initial }: Props) {
       <p className="text-sm text-ink-muted">
         <button
           type="button"
-          className="font-semibold underline underline-offset-4"
+          className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
           onClick={() => setRefreshTick((n) => n + 1)}
           disabled={!online}
         >
@@ -565,9 +565,9 @@ export function AttendanceApp({ slug, userId, initial }: Props) {
 }
 
 const OPTIONS = [
-  { status: "present", label: "Presente", on: "border-success bg-success text-white" },
-  { status: "absent", label: "Ausente", on: "border-danger bg-danger text-white" },
-  { status: "excused", label: "Justificada", on: "border-warning bg-warning text-white" },
+  { status: "present", label: "Presente", on: "border-success bg-success text-on-success" },
+  { status: "absent", label: "Ausente", on: "border-danger bg-danger text-on-danger" },
+  { status: "excused", label: "Justificada", on: "border-warning bg-warning text-on-warning" },
 ] as const;
 
 function EntryRow({

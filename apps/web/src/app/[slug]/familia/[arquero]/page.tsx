@@ -127,7 +127,7 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
           {current && (
             <Link
               href={evolutionHref}
-              className="text-sm font-semibold underline underline-offset-4"
+              className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4"
             >
               Ver evolución
             </Link>
@@ -154,7 +154,10 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-display text-lg font-bold">Último video</h2>
           {latestVideo && (
-            <Link href={videosHref} className="text-sm font-semibold underline underline-offset-4">
+            <Link
+              href={videosHref}
+              className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4"
+            >
               Ver todos
             </Link>
           )}
@@ -185,7 +188,7 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
             <h2 className="font-display text-lg font-bold">Asistencia</h2>
             <Link
               href={`/${session.schoolSlug}/familia/${goalkeeper.id}/asistencia`}
-              className="text-sm font-semibold underline underline-offset-4"
+              className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4"
             >
               Ver calendario
             </Link>
@@ -209,7 +212,7 @@ async function GoalkeeperHome({ params }: Pick<PageProps<"/[slug]/familia/[arque
             <h2 className="font-display text-lg font-bold">Cuota</h2>
             <Link
               href={`/${session.schoolSlug}/familia/${goalkeeper.id}/cuotas`}
-              className="text-sm font-semibold underline underline-offset-4"
+              className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4"
             >
               Ver historial
             </Link>

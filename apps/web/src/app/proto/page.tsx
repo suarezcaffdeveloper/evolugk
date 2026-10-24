@@ -112,7 +112,7 @@ export default function ProtoPage() {
   }
 
   return (
-    <main className="school-brand min-h-screen px-4 py-8 sm:px-8" style={brandStyle}>
+    <main id="contenido" className="school-brand min-h-screen px-4 py-8 sm:px-8" style={brandStyle}>
       <div className="mx-auto max-w-6xl">
         {/* Barra de control del prototipo */}
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">

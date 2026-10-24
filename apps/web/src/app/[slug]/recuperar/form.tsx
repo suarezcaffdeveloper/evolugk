@@ -54,7 +54,7 @@ export function RecoverForm({ slug }: { slug: string }) {
       </SubmitButton>
       <Link
         href={`/${slug}/login`}
-        className="block text-center text-sm font-semibold text-ink-muted hover:text-ink"
+        className="block py-3 text-center text-sm font-semibold text-ink-muted hover:text-ink"
       >
         Volver al ingreso
       </Link>

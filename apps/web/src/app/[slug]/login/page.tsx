@@ -15,7 +15,10 @@ export const metadata: Metadata = {
 
 export default function StaffLoginPage({ params, searchParams }: PageProps<"/[slug]/login">) {
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 pb-16">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 pb-16"
+    >
       <Suspense fallback={<FormSkeleton />}>
         <LoginContent params={params} searchParams={searchParams} />
       </Suspense>

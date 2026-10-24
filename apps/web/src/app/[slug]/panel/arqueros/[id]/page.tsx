@@ -50,7 +50,10 @@ export default function GoalkeeperPage({
   searchParams,
 }: PageProps<"/[slug]/panel/arqueros/[id]">) {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-4">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-4"
+    >
       <Suspense
         fallback={<div className="h-96 animate-pulse rounded-card bg-line" aria-busy="true" />}
       >
@@ -144,7 +147,10 @@ async function GoalkeeperContent({
 
   return (
     <>
-      <Link href={base} className="text-sm font-semibold text-ink-muted hover:text-ink">
+      <Link
+        href={base}
+        className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
+      >
         ← Arqueros
       </Link>
 
@@ -175,7 +181,10 @@ async function GoalkeeperContent({
         <div className="flex items-center justify-between gap-2">
           <h2 className="font-display text-lg font-bold">Ficha</h2>
           {isAdmin && (
-            <Link href={`${base}/${id}/editar`} className="text-sm font-semibold underline">
+            <Link
+              href={`${base}/${id}/editar`}
+              className="inline-flex min-h-11 items-center px-2 text-sm font-semibold underline"
+            >
               Editar
             </Link>
           )}

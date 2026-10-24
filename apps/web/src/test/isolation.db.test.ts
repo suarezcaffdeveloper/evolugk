@@ -46,6 +46,13 @@ let adminAUser: TestUser;
 let coachAUser: TestUser;
 let adminBUser: TestUser;
 
+/**
+ * `select("*")` sobre invitation falla a propósito con "permission denied": incluiría token_hash,
+ * que el staff no puede leer (migración tighten_privileges). Para comprobar qué FILAS se ven se
+ * piden columnas permitidas.
+ */
+const columnsOf = (table: string) => (table === "invitation" ? "id" : "*");
+
 async function ids(client: SupabaseClient, table: string, column = "id"): Promise<string[]> {
   const { data, error } = await client.from(table).select(column);
   expect(error).toBeNull();
@@ -179,7 +186,7 @@ describe("aislamiento entre escuelas (CA-01)", () => {
 describe("permisos por rol (CA-02: el profesor no ve lo administrativo)", () => {
   it("el profesor no ve invitaciones, suscripción ni auditoría", async () => {
     for (const table of ["invitation", "subscription", "audit_log"] as const) {
-      const { data, error } = await coachA.from(table).select("*");
+      const { data, error } = await coachA.from(table).select(columnsOf(table));
       expect(error).toBeNull();
       expect(data).toEqual([]);
     }
@@ -193,7 +200,7 @@ describe("permisos por rol (CA-02: el profesor no ve lo administrativo)", () => 
 
   it("una cuenta sin perfil no ve nada", async () => {
     for (const table of ["school", "invitation", "subscription", "audit_log"] as const) {
-      const { data, error } = await noProfile.from(table).select("*");
+      const { data, error } = await noProfile.from(table).select(columnsOf(table));
       expect(error).toBeNull();
       expect(data).toEqual([]);
     }
@@ -201,7 +208,7 @@ describe("permisos por rol (CA-02: el profesor no ve lo administrativo)", () => 
 
   it("el operador con solo la contraseña (sin segundo paso) no ve nada, salvo su propio perfil", async () => {
     for (const table of ["school", "subscription", "invitation", "audit_log"] as const) {
-      const { data, error } = await operatorAal1.from(table).select("*");
+      const { data, error } = await operatorAal1.from(table).select(columnsOf(table));
       expect(error).toBeNull();
       expect(data, table).toEqual([]);
     }

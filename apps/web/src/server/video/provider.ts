@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Interfaz propia del proveedor de video (spec 03, RN-02). La aplicación solo habla con esto; Mux
  * es la primera implementación y se puede cambiar por otra sin tocar el resto (docs/04).

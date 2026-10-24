@@ -18,7 +18,10 @@ export const metadata: Metadata = {
 
 export default function FirstLoginPage({ params }: PageProps<"/[slug]/familia/primer-ingreso">) {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 pb-16 pt-2">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 pb-16 pt-2"
+    >
       <Suspense fallback={<div className="h-64 animate-pulse rounded-card bg-line" />}>
         <FirstLogin params={params} />
       </Suspense>

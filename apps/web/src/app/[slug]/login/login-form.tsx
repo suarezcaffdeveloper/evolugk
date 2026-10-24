@@ -50,7 +50,7 @@ export function LoginForm({ slug }: { slug: string }) {
 
       <Link
         href={`/${slug}/recuperar`}
-        className="block text-center text-sm font-semibold text-ink-muted hover:text-ink"
+        className="block py-3 text-center text-sm font-semibold text-ink-muted hover:text-ink"
       >
         ¿Olvidaste tu contraseña?
       </Link>

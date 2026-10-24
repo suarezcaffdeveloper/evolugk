@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Configuración que viene del entorno. Se lee cuando se usa (no al cargar el módulo) para que las
  * pruebas y los scripts puedan cambiar las variables.

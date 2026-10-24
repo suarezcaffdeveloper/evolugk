@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath, updateTag } from "next/cache";
+import { redirect } from "next/navigation";
+import { formatCalendarDate } from "@/lib/dates";
 import type { FieldErrors } from "@/lib/auth-schemas";
 import { requireOperator } from "@/server/auth/guards";
 import { getAppUrl } from "@/server/config";
@@ -12,7 +14,9 @@ import {
   setSchoolSuspended,
   setVideoMinutesLimit,
 } from "@/server/schools";
+import { deleteSchoolPermanently } from "@/server/school-deletion";
 import { createServiceClient } from "@/server/supabase";
+import { getVideoProvider } from "@/server/video";
 import { schoolBrandingTag } from "@/server/tenant";
 
 export type DeliveryInfo = { link: string; sent: boolean; message: string };
@@ -202,4 +206,48 @@ export async function resendAdminInvitationAction(
       ...describeDelivery(delivery, invitation.invitation.email),
     },
   };
+}
+
+export type DeleteSchoolState = { error?: string };
+
+/**
+ * Borrado definitivo de una escuela suspendida hace 90 días o más (spec 00, RN-09). Irreversible:
+ * pide escribir el identificador de la escuela para confirmar.
+ */
+export async function deleteSchoolAction(
+  schoolId: string,
+  _previous: DeleteSchoolState,
+  formData: FormData,
+): Promise<DeleteSchoolState> {
+  const operator = await requireOperator("ready");
+  const confirmSlug = formData.get("confirmSlug");
+
+  const result = await deleteSchoolPermanently(createServiceClient(), getVideoProvider(), {
+    schoolId,
+    confirmSlug: typeof confirmSlug === "string" ? confirmSlug : "",
+    actorId: operator.user.id,
+  });
+
+  if (!result.ok) {
+    const messages = {
+      not_found: "Esa escuela ya no existe.",
+      not_suspended: "Solo se puede borrar una escuela suspendida.",
+      too_early: result.eligibleOn
+        ? `Todavía no se cumplieron los 90 días de suspensión. Se puede borrar desde el ${formatCalendarDate(result.eligibleOn)}.`
+        : "Todavía no se cumplieron los 90 días de suspensión.",
+      confirmation_mismatch: "El identificador no coincide. Escribilo tal cual figura arriba.",
+      failed: "No pudimos borrar la escuela. No se cambió nada: intentá de nuevo.",
+    } as const;
+    return { error: messages[result.error] };
+  }
+
+  updateTag(schoolBrandingTag(result.slug));
+  revalidatePath("/operator");
+  // El detalle de la escuela ya no existe: se vuelve al inicio con el resultado en la dirección.
+  const query = new URLSearchParams({
+    borrada: result.slug,
+    pendientes: String(result.pendingAtProvider),
+    cuentas: String(result.usersNotDeleted),
+  });
+  redirect(`/operator?${query}`);
 }

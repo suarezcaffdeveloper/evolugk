@@ -21,6 +21,14 @@
   --success: #2f7d4f;
   --warning: #b7791f;
   --danger: #b42318;
+  /* Texto sobre los fondos tenues de las etiquetas: los colores de arriba, oscurecidos para llegar
+     a 4,5:1 incluso sobre su fondo al 15 % (success y warning no alcanzaban en modo claro). */
+  --success-ink: #25663f;
+  --warning-ink: #855710;
+  /* Texto sobre un fondo sólido de estado (botones marcados, calendario): 5,0 / 4,7 / 6,6 : 1. */
+  --on-success: #ffffff;
+  --on-warning: #1f1a17;
+  --on-danger: #ffffff;
 
   --elev-card: 0 1px 2px rgb(60 40 20 / 0.06), 0 4px 14px rgb(60 40 20 / 0.06);
   --elev-card-hover: 0 2px 4px rgb(60 40 20 / 0.08), 0 10px 28px rgb(60 40 20 / 0.1);
@@ -42,6 +50,12 @@
   --success: #4db37a;
   --warning: #e0a94a;
   --danger: #f0766b;
+  --success-ink: #4db37a;
+  --warning-ink: #e0a94a;
+  /* En oscuro los colores de estado son claros: el texto va oscuro (6,6 / 8,2 / 6,2 : 1). */
+  --on-success: #1f1a17;
+  --on-warning: #1f1a17;
+  --on-danger: #1f1a17;
 
   --elev-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 14px rgb(0 0 0 / 0.3);
   --elev-card-hover: 0 2px 4px rgb(0 0 0 / 0.5), 0 10px 28px rgb(0 0 0 / 0.4);
@@ -75,8 +89,13 @@
   --color-accent-soft: color-mix(in oklab, var(--accent) 12%, var(--surface));
   --color-compare: var(--compare);
   --color-success: var(--success);
+  --color-success-ink: var(--success-ink);
   --color-warning: var(--warning);
+  --color-warning-ink: var(--warning-ink);
   --color-danger: var(--danger);
+  --color-on-success: var(--on-success);
+  --color-on-warning: var(--on-warning);
+  --color-on-danger: var(--on-danger);
 
   --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-bricolage), var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
@@ -148,6 +167,14 @@ body {
 }
 .new-glint {
   animation: new-glint 2.2s ease-out 2;
+}
+
+/* Mientras una pantalla muestra su esqueleto de carga el pie no se ve: la página todavía es corta y
+   el pie quedaría pegado al borde de abajo; al llegar el contenido, más largo, lo empujaría fuera
+   de la pantalla de golpe (era el mayor desplazamiento de diseño de las pantallas con sesión,
+   CLS 0,13 a 0,20). Un elemento oculto no cuenta como desplazamiento. */
+.school-brand:has([aria-busy="true"], .animate-pulse) footer {
+  visibility: hidden;
 }
 
 /* Quien tiene activado "reducir movimiento" no ve animaciones */

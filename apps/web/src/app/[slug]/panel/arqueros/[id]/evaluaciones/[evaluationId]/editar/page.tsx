@@ -24,7 +24,10 @@ type Props = PageProps<"/[slug]/panel/arqueros/[id]/evaluaciones/[evaluationId]/
 
 export default function EditEvaluationPage({ params }: Props) {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-8 pt-4">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-8 pt-4"
+    >
       <Suspense
         fallback={<div className="h-96 animate-pulse rounded-card bg-line" aria-busy="true" />}
       >
@@ -50,7 +53,10 @@ async function EditEvaluationContent({ params }: Pick<Props, "params">) {
   if (!canEdit) {
     return (
       <>
-        <Link href={detailHref} className="text-sm font-semibold text-ink-muted hover:text-ink">
+        <Link
+          href={detailHref}
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
+        >
           ← Evaluación
         </Link>
         <Notice tone="warning">
@@ -70,7 +76,10 @@ async function EditEvaluationContent({ params }: Pick<Props, "params">) {
 
   return (
     <>
-      <Link href={detailHref} className="text-sm font-semibold text-ink-muted hover:text-ink">
+      <Link
+        href={detailHref}
+        className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
+      >
         ← Evaluación
       </Link>
       <div className="rise-in space-y-1">

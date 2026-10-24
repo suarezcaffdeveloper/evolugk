@@ -1,3 +1,4 @@
+import "server-only";
 import { resolveAccent } from "@/lib/color";
 import type { EmailMessage } from "./transport";
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import "./zod-config";
 
 /** Validaciones de evaluaciones y notas (spec 02). Mensajes en español (es-AR). */
 

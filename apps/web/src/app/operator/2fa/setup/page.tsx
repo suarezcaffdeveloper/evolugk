@@ -5,7 +5,10 @@ import { SetupFlow } from "./setup-form";
 
 export default function TwoFactorSetupPage() {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-16">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-16"
+    >
       <Suspense
         fallback={<div className="h-96 animate-pulse rounded-card bg-line" aria-busy="true" />}
       >

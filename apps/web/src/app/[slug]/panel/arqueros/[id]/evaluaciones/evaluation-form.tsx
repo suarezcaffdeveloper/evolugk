@@ -174,7 +174,7 @@ export function EvaluationForm({
                     ))}
                   </div>
 
-                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-ink-muted has-[:checked]:text-ink">
+                  <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-ink-muted has-[:checked]:text-ink">
                     <input
                       type="radio"
                       name={`score-${category.id}`}
@@ -187,7 +187,7 @@ export function EvaluationForm({
                 </fieldset>
 
                 <details className="text-sm">
-                  <summary className="cursor-pointer font-semibold text-ink-muted hover:text-ink">
+                  <summary className="cursor-pointer py-2 font-semibold text-ink-muted hover:text-ink">
                     Guía de puntajes
                   </summary>
                   <dl className="mt-2 space-y-1.5">
@@ -207,7 +207,7 @@ export function EvaluationForm({
                 </details>
 
                 <details className="text-sm" open={commentOf(category.id) !== ""}>
-                  <summary className="cursor-pointer font-semibold text-ink-muted hover:text-ink">
+                  <summary className="cursor-pointer py-2 font-semibold text-ink-muted hover:text-ink">
                     Comentario de la categoría
                   </summary>
                   <textarea

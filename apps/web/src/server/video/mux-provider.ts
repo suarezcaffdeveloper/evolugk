@@ -1,3 +1,4 @@
+import "server-only";
 import Mux, { NotFoundError } from "@mux/mux-node";
 import type {
   PlaybackTokens,

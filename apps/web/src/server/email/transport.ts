@@ -1,3 +1,4 @@
+import "server-only";
 import { getEmailConfig } from "../config";
 
 export type EmailMessage = {

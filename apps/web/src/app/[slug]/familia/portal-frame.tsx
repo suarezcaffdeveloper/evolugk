@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { InstallPrompt } from "@/components/install-prompt";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/cn";
 import type { FamilyGoalkeeper } from "@/server/guardian/portal";
@@ -38,7 +39,10 @@ export function PortalFrame({
     : [{ href: `${base}/mis-datos`, label: "Mis datos" }];
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-2">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-16 pt-2"
+    >
       {goalkeepers.length > 1 && (
         <form
           action={selectGoalkeeperAction.bind(null, slug)}
@@ -66,6 +70,9 @@ export function PortalFrame({
       )}
 
       <PortalNav items={items} />
+
+      {/* Se sugiere instalar la app una vez adentro del portal (spec 04, RF-40). */}
+      <InstallPrompt />
 
       {children}
 

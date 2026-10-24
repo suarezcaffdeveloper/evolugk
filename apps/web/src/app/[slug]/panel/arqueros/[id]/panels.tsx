@@ -635,7 +635,7 @@ export function DeleteForm({
   );
   return (
     <details className="group space-y-3">
-      <summary className="cursor-pointer text-sm font-semibold text-danger">
+      <summary className="cursor-pointer py-2 text-sm font-semibold text-danger">
         Eliminar definitivamente…
       </summary>
       <form action={formAction} className="mt-3 space-y-3">
@@ -649,7 +649,7 @@ export function DeleteForm({
         {state.error && <FormAlert>{state.error}</FormAlert>}
         <SubmitButton
           pendingText="Eliminando…"
-          className="bg-danger text-white hover:brightness-110"
+          className="bg-danger text-on-danger hover:brightness-110"
         >
           Eliminar para siempre
         </SubmitButton>

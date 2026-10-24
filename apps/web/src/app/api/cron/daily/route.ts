@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { argentinaDate } from "@/lib/dates";
+import { isAuthorizedCron } from "@/server/cron-auth";
 import { createConfiguredTransport } from "@/server/email/transport";
 import { generateFees, sendFeeNotices } from "@/server/fees";
 import { refreshPlatformAlerts, sendOperatorSummary } from "@/server/subscriptions";
@@ -12,8 +13,7 @@ import { createServiceClient } from "@/server/supabase";
  * duplica cuotas ni mails. La llama un programador externo con `Authorization: Bearer <CRON_SECRET>`.
  */
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET?.trim();
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!isAuthorizedCron(request)) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 

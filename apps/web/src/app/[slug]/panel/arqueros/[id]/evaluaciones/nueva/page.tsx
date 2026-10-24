@@ -20,7 +20,10 @@ export default function NewEvaluationPage({
   params,
 }: PageProps<"/[slug]/panel/arqueros/[id]/evaluaciones/nueva">) {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-8 pt-4">
+    <main
+      id="contenido"
+      className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-8 pt-4"
+    >
       <Suspense
         fallback={<div className="h-96 animate-pulse rounded-card bg-line" aria-busy="true" />}
       >
@@ -47,7 +50,10 @@ async function NewEvaluationContent({
   if (context.goalkeeper.status !== "active") {
     return (
       <>
-        <Link href={back} className="text-sm font-semibold text-ink-muted hover:text-ink">
+        <Link
+          href={back}
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
+        >
           ← {name}
         </Link>
         <Notice tone="warning">
@@ -63,7 +69,10 @@ async function NewEvaluationContent({
 
   return (
     <>
-      <Link href={back} className="text-sm font-semibold text-ink-muted hover:text-ink">
+      <Link
+        href={back}
+        className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-muted hover:text-ink"
+      >
         ← {name}
       </Link>
       <div className="rise-in space-y-1">
